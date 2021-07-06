@@ -11,49 +11,54 @@ from datetime import date
 
 def main():
     dict_params = {
-        'N': 2 ** 9,
+        'N': 2 ** 10,
         'M': 25,
-        'A': 0.6}
+        'A': 0.7}
     dict_params.update({
-        'FLR': True,
-        'rho': 0.1,
+        'FLR': False,
         'flr_order': 'all',
-        'gc_order': 2,
+        'rho': 0.2,
+        'gc_order': 1,
         'eta': 0.1})
     dict_params.update({
         #'method': 'plot_potential',
         'method': 'poincare',
-        'modulo': True,
-        'Ntraj': 40,
-        'Tf': 1000,
-        'tol': 1e-8,
-        'save_results': True})
+        'modulo': False,
+        'Ntraj': 1000,
+        'Tf': 5000,
+        'timestep': 0.1,
+        'save_results': True,
+        'plot_results': True})
 
     timestr = time.strftime("%Y%m%d_%H%M")
     case = GC2D(dict_params)
     if case.method == 'plot_potential':
         data = xp.array([case.phi, case.phi_flr, case.phi_gc2_0, case.phi_gc2_2])
         case.save_data('potentials', data, timestr)
-        plt.figure(figsize=(8, 8))
-        plt.pcolor(case.xv, case.xv, case.phi.imag, shading='auto')
-        plt.colorbar()
-        plt.figure(figsize=(8, 8))
-        plt.pcolor(case.xv, case.xv, case.phi_flr.imag, shading='auto')
-        plt.colorbar()
-        plt.figure(figsize=(8, 8))
-        plt.pcolor(case.xv, case.xv, case.phi_gc2_0 + case.phi_gc2_2.real, shading='auto')
-        plt.colorbar()
-        plt.show()
+        if case.plot_results:
+            plt.figure(figsize=(8, 8))
+            plt.pcolor(case.xv, case.xv, case.phi.imag, shading='auto')
+            plt.colorbar()
+            plt.figure(figsize=(8, 8))
+            plt.pcolor(case.xv, case.xv, case.phi_flr.imag, shading='auto')
+            plt.colorbar()
+            plt.figure(figsize=(8, 8))
+            plt.pcolor(case.xv, case.xv, case.phi_gc2_0 + case.phi_gc2_2.real, shading='auto')
+            plt.colorbar()
+            plt.show()
     elif case.method == 'poincare':
         y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
         t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
-        sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, rtol=case.tol, atol=case.tol)
+        start = time.time()
+        sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
+        print('Computation finished in {} seconds'.format(time.time() - start))
         if case.modulo:
             sol.y = sol.y % (2.0 * xp.pi)
-        case.save_data('poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]), timestr)
-        plt.figure(figsize=(8, 8))
-        plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
-        plt.show()
+        case.save_data('poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), timestr)
+        if case.plot_results:
+            plt.figure(figsize=(8, 8))
+            plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+            plt.show()
 
 
 class GC2D:
@@ -61,7 +66,7 @@ class GC2D:
         return '{self.__class__.name__}({self.DictParams})'.format(self=self)
 
     def __str__(self):
-        return '2D Guiding Center ({self.__class__.name__}) with FLR = {self.FLR} and GC order = {self.gyro}'.format(self=self)
+        return '2D Guiding Center ({self.__class__.name__}) with FLR = {self.FLR} and GC order = {self.gc_order}'.format(self=self)
 
     def __init__(self, dict_params):
         for key in dict_params:
@@ -75,6 +80,7 @@ class GC2D:
 
         fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
         fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0] ** 2 + n[1] ** 2) ** 1.5).astype(xp.complex128) * xp.exp(1j * phases)
+        fft_phi[nm[0] ** 2 + nm[1] ** 2 > self.M **2] = 0.0
 
         fft_phi_flr = xp.zeros((self.N, self.N), dtype=xp.complex128)
         if self.flr_order == 'all':
