@@ -24,10 +24,10 @@ def main():
         #'method': 'plot_potential',
         'method': 'poincare',
         'modulo': False,
-        'Ntraj': 1000,
-        'Tf': 5000,
+        'Ntraj': 100,
+        'Tf': 500,
         'timestep': 0.1,
-        'save_results': True,
+        'save_results': False,
         'plot_results': True})
 
     timestr = time.strftime("%Y%m%d_%H%M")
