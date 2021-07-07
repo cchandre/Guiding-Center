@@ -13,7 +13,7 @@ def main():
     dict_params = {
         'N': 2 ** 10,
         'M': 25,
-        'A': 0.7}
+        'A': 0.5}
     dict_params.update({
         'FLR': False,
         'flr_order': 'all',
@@ -25,8 +25,8 @@ def main():
         #'method': 'poincare',
         'method': 'diffusion',
         'modulo': False,
-        'Ntraj': 10,
-        'Tf': 500,
+        'Ntraj': 2000,
+        'Tf': 5000,
         'timestep': 0.1,
         'save_results': True,
         'plot_results': True})
