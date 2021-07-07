@@ -21,18 +21,19 @@ def main():
         'gc_order': 1,
         'eta': 0.1})
     dict_params.update({
-        #'method': 'plot_potential',
-        'method': 'poincare',
+        #'method': 'plot_potentials',
+        #'method': 'poincare',
+        'method': 'diffusion',
         'modulo': False,
-        'Ntraj': 100,
+        'Ntraj': 10,
         'Tf': 500,
         'timestep': 0.1,
-        'save_results': False,
+        'save_results': True,
         'plot_results': True})
 
     timestr = time.strftime("%Y%m%d_%H%M")
     case = GC2D(dict_params)
-    if case.method == 'plot_potential':
+    if case.method == 'plot_potentials':
         data = xp.array([case.phi, case.phi_flr, case.phi_gc2_0, case.phi_gc2_2])
         case.save_data('potentials', data, timestr)
         if case.plot_results:
@@ -51,13 +52,26 @@ def main():
         t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
         start = time.time()
         sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-        print('Computation finished in {} seconds'.format(time.time() - start))
+        print('Computation finished in {} seconds'.format(int(time.time() - start)))
         if case.modulo:
             sol.y = sol.y % (2.0 * xp.pi)
         case.save_data('poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), timestr)
         if case.plot_results:
             plt.figure(figsize=(8, 8))
             plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+            plt.show()
+    elif case.method == 'diffusion':
+        y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+        t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
+        start = time.time()
+        sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
+        print('Computation finished in {} seconds'.format(int(time.time() - start)))
+        r2 = xp.mean(xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj, 1)) ** 2\
+         + xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj, 1)) ** 2, axis=0)
+        case.save_data('poincare', [t_eval, r2], timestr)
+        if case.plot_results:
+            plt.figure(figsize=(8, 8))
+            plt.plot(t_eval, r2, 'b', linewidth=2)
             plt.show()
 
 
