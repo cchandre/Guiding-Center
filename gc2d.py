@@ -17,7 +17,7 @@ def main():
     dict_params.update({
         'FLR': False,
         'flr_order': 'all',
-        'rho': 0.2,
+        'rho': 0.05,
         'gc_order': 1,
         'eta': 0.1})
     dict_params.update({
@@ -66,9 +66,13 @@ def main():
         start = time.time()
         sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
         print('Computation finished in {} seconds'.format(int(time.time() - start)))
-        r2 = xp.mean(xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj, 1)) ** 2\
-         + xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj, 1)) ** 2, axis=0)
-        case.save_data('poincare', [t_eval, r2], timestr)
+        r2 = xp.zeros(case.Tf)
+        for t in range(case.Tf):
+            r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
+        max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
+        + xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
+        tra = (max_y <= xp.pi).sum()
+        case.save_data('diffusion', [t_eval, r2], timestr, info='trapped particles = {}'.format(tra))
         if case.plot_results:
             plt.figure(figsize=(8, 8))
             plt.plot(t_eval, r2, 'b', linewidth=2)
