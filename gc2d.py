@@ -118,12 +118,12 @@ class GC2D:
         self.dphidy_flr = xp.pad(ifft2(1j * nm[1] * fft_phi_flr) * self.N**2, (0, 1), mode='wrap')
         self.phi_gc2_0 = - self.eta * self.A**2 * (xp.abs(self.dphidx) ** 2 + xp.abs(self.dphidy) ** 2) / 2.0
         self.phi_gc2_2 = - self.eta * self.A**2 * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
-        self.dphidx = xp.pad(self.dphidx, (0, 1), mode='wrap')
-        self.dphidy = xp.pad(self.dphidy, (0, 1), mode='wrap')
-        self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), (0, 1), mode='wrap')
-        self.dphidy_gc2_0 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_0)), (0, 1), mode='wrap')
-        self.dphidx_gc2_2 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_2)), (0, 1), mode='wrap')
-        self.dphidy_gc2_2 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_2)), (0, 1), mode='wrap')
+        self.dphidx = xp.pad(self.dphidx, ((0, 1),), mode='wrap')
+        self.dphidy = xp.pad(self.dphidy, ((0, 1),), mode='wrap')
+        self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
+        self.dphidy_gc2_0 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
+        self.dphidx_gc2_2 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
+        self.dphidy_gc2_2 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
 
     def eqn_phi(self, t, y):
         yr = xp.array([y[:self.Ntraj], y[self.Ntraj:]]).transpose() % (2.0 * xp.pi)
