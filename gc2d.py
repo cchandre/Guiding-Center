@@ -17,7 +17,7 @@ def main():
     dict_params.update({
         'FLR': True,
         'flr_order': 'all',
-        'rho': 0.05,
+        'rho': 0.07,
         'gc_order': 1,
         'eta': 0.1})
     dict_params.update({
@@ -28,7 +28,7 @@ def main():
         'Ntraj': 2000,
         'Tf': 5000,
         'timestep': 0.05,
-        'save_results': True,
+        'save_results': False,
         'plot_results': True})
 
     timestr = time.strftime("%Y%m%d_%H%M")
@@ -71,8 +71,8 @@ def main():
             r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
         max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
         + xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
-        tra = (max_y <= xp.pi).sum()
-        case.save_data('diffusion', [t_eval, r2], timestr, info='trapped particles = {}'.format(tra))
+        trapped = (max_y <= xp.pi).sum()
+        case.save_data('diffusion', [t_eval, r2], timestr, info='trapped particles = {}'.format(trapped))
         if case.plot_results:
             plt.figure(figsize=(8, 8))
             plt.plot(t_eval, r2, 'b', linewidth=2)
@@ -87,6 +87,11 @@ class GC2D:
         return '2D Guiding Center ({self.__class__.name__}) with FLR = {self.FLR} and GC order = {self.gc_order}'.format(self=self)
 
     def __init__(self, dict_params):
+        if not dict_params['FLR']:
+            dict_params['flr_order'] = 0
+            dict_params['rho'] = 0
+        if dict_params['gc_order'] == 1:
+            dict_params['eta'] = 0
         for key in dict_params:
             setattr(self, key, dict_params[key])
         self.DictParams = dict_params
@@ -99,24 +104,21 @@ class GC2D:
         fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
         fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0] ** 2 + n[1] ** 2) ** 1.5).astype(xp.complex128) * xp.exp(1j * phases)
         fft_phi[nm[0] ** 2 + nm[1] ** 2 > self.M **2] = 0.0
-        fft_phi_flr = xp.zeros((self.N, self.N), dtype=xp.complex128)
         if self.flr_order == 'all':
-            fft_phi_flr = jv(0, self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) * fft_phi
+            fft_phi_ = jv(0, self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) * fft_phi
         else:
             x = Symbol('x')
             flr_expansion = besselj(0, x).series(x, 0, self.flr_order+1).removeO()
             flr_func = lambdify(x, flr_expansion)
-            fft_phi_flr = flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) * fft_phi
+            fft_phi_ = flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) * fft_phi
         self.phi = ifft2(fft_phi) * (self.N ** 2)
-        self.phi_flr = ifft2(fft_phi_flr) * (self.N ** 2)
+        self.phi_ = ifft2(fft_phi_) * (self.N ** 2)
         self.dphidx = ifft2(1j * nm[0] * fft_phi) * (self.N ** 2)
         self.dphidy = ifft2(1j * nm[1] * fft_phi) * (self.N ** 2)
         self.phi_gc2_0 = - self.eta * (xp.abs(self.dphidx) ** 2 + xp.abs(self.dphidy) ** 2) / 2.0
         self.phi_gc2_2 = - self.eta * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
-        self.dphidx = xp.pad(self.dphidx, ((0, 1),), mode='wrap')
-        self.dphidy = xp.pad(self.dphidy, ((0, 1),), mode='wrap')
-        self.dphidx_flr = xp.pad(ifft2(1j * nm[0] * fft_phi_flr) * (self.N ** 2), ((0, 1),), mode='wrap')
-        self.dphidy_flr = xp.pad(ifft2(1j * nm[1] * fft_phi_flr) * (self.N ** 2), ((0, 1),), mode='wrap')
+        self.dphidx_ = xp.pad(ifft2(1j * nm[0] * fft_phi_) * (self.N ** 2), ((0, 1),), mode='wrap')
+        self.dphidy_ = xp.pad(ifft2(1j * nm[1] * fft_phi_) * (self.N ** 2), ((0, 1),), mode='wrap')
         self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
         self.dphidy_gc2_0 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
         self.dphidx_gc2_2 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
@@ -124,24 +126,18 @@ class GC2D:
 
     def eqn_phi(self, t, y):
         yr = xp.array([y[:self.Ntraj], y[self.Ntraj:]]).transpose() % (2.0 * xp.pi)
-        if self.FLR:
-            dphidx_ = self.dphidx_flr
-            dphidy_ = self.dphidy_flr
-        else:
-            dphidx_ = self.dphidx
-            dphidy_ = self.dphidy
-        DphiDx = interpn((self.xv_, self.xv_), dphidx_, yr)
-        DphiDy = interpn((self.xv_, self.xv_), dphidy_, yr)
-        dy = xp.concatenate((- (DphiDy * xp.exp(- 1j * t)).imag, (DphiDx * xp.exp(- 1j *t)).imag), axis=None)
+        dphidx = interpn((self.xv_, self.xv_), self.dphidx_, yr)
+        dphidy = interpn((self.xv_, self.xv_), self.dphidy_, yr)
+        dy = xp.concatenate((- (dphidy * xp.exp(- 1j * t)).imag, (dphidx * xp.exp(- 1j *t)).imag), axis=None)
         if self.gc_order == 1:
             return dy
         elif self.gc_order == 2:
-            DphiDx_gc2_0 = interpn((self.xv_, self.xv_), self.dphidx_gc2_0, yr)
-            DphiDy_gc2_0 = interpn((self.xv_, self.xv_), self.dphidy_gc2_0, yr)
-            DphiDx_gc2_2 = interpn((self.xv_, self.xv_), self.dphidx_gc2_2, yr)
-            DphiDy_gc2_2 = interpn((self.xv_, self.xv_), self.dphidy_gc2_2, yr)
-            dy_gc2 = xp.concatenate((- DphiDy_gc2_0.real + (DphiDy_gc2_2 * xp.exp(- 2j * t)).real,
-                                 DphiDx_gc2_0.real - (DphiDx_gc2_2 * xp.exp(- 2j * t)).real), axis=None)
+            dphidx_gc2_0 = interpn((self.xv_, self.xv_), self.dphidx_gc2_0, yr)
+            dphidy_gc2_0 = interpn((self.xv_, self.xv_), self.dphidy_gc2_0, yr)
+            dphidx_gc2_2 = interpn((self.xv_, self.xv_), self.dphidx_gc2_2, yr)
+            dphidy_gc2_2 = interpn((self.xv_, self.xv_), self.dphidy_gc2_2, yr)
+            dy_gc2 = xp.concatenate((- dphidy_gc2_0.real + (dphidy_gc2_2 * xp.exp(- 2j * t)).real,
+                                 dphidx_gc2_0.real - (dphidx_gc2_2 * xp.exp(- 2j * t)).real), axis=None)
             return dy + dy_gc2
 
     def save_data(self, name, data, timestr, info=[]):
