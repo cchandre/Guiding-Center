@@ -111,45 +111,43 @@ class GC2D:
 		else:
 			x = sp.Symbol('x')
 			flr_expansion = sp.besselj(0, x).series(x, 0, self.flr_order+1).removeO()
-			print(flr_expansion)
 			flr_func = sp.lambdify(x, flr_expansion)
 			fft_phi_ = flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) * fft_phi
-        self.phi = ifft2(fft_phi) * (self.N ** 2)
+		self.phi = ifft2(fft_phi) * (self.N ** 2)
 		self.phi_ = ifft2(fft_phi_) * (self.N ** 2)
 		self.dphidx = ifft2(1j * nm[0] * fft_phi) * (self.N ** 2)
 		self.dphidy = ifft2(1j * nm[1] * fft_phi) * (self.N ** 2)
-        self.phi_gc2_0 = - self.eta * (xp.abs(self.dphidx) ** 2 + xp.abs(self.dphidy) ** 2) / 2.0
-        self.phi_gc2_2 = - self.eta * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
-        self.dphidx_gc1_1 = xp.pad(ifft2(1j * nm[0] * fft_phi_) * (self.N ** 2), ((0, 1),), mode='wrap')
-        self.dphidy_gc1_1 = xp.pad(ifft2(1j * nm[1] * fft_phi_) * (self.N ** 2), ((0, 1),), mode='wrap')
-        self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
-        self.dphidy_gc2_0 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
-        self.dphidx_gc2_2 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
-        self.dphidy_gc2_2 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
+		self.phi_gc2_0 = - self.eta * (xp.abs(self.dphidx) ** 2 + xp.abs(self.dphidy) ** 2) / 2.0
+		self.phi_gc2_2 = - self.eta * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
+		self.dphidx_gc1_1 = xp.pad(ifft2(1j * nm[0] * fft_phi_) * (self.N ** 2), ((0, 1),), mode='wrap')
+		self.dphidy_gc1_1 = xp.pad(ifft2(1j * nm[1] * fft_phi_) * (self.N ** 2), ((0, 1),), mode='wrap')
+		self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
+		self.dphidy_gc2_0 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
+		self.dphidx_gc2_2 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
+		self.dphidy_gc2_2 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
 
-    def eqn_phi(self, t, y):
-        yr = xp.array([y[:self.Ntraj], y[self.Ntraj:]]).transpose() % (2.0 * xp.pi)
-        dphidx = interpn((self.xv_, self.xv_), self.dphidx_gc1_1, yr)
-        dphidy = interpn((self.xv_, self.xv_), self.dphidy_gc1_1, yr)
-        dy_gc1 = xp.concatenate((- (dphidy * xp.exp(- 1j * t)).imag, (dphidx * xp.exp(- 1j * t)).imag), axis=None)
-        if self.gc_order == 1:
-            return dy_gc1
-        elif self.gc_order == 2:
-            dphidx_0 = interpn((self.xv_, self.xv_), self.dphidx_gc2_0, yr)
-            dphidy_0 = interpn((self.xv_, self.xv_), self.dphidy_gc2_0, yr)
-            dphidx_2 = interpn((self.xv_, self.xv_), self.dphidx_gc2_2, yr)
-            dphidy_2 = interpn((self.xv_, self.xv_), self.dphidy_gc2_2, yr)
-            dy_gc2 = xp.concatenate((- dphidy_0.real + (dphidy_2 * xp.exp(- 2j * t)).real,
-                                 dphidx_0.real - (dphidx_2 * xp.exp(- 2j * t)).real), axis=None)
-            return dy_gc1 + dy_gc2
+	def eqn_phi(self, t, y):
+		yr = xp.array([y[:self.Ntraj], y[self.Ntraj:]]).transpose() % (2.0 * xp.pi)
+		dphidx = interpn((self.xv_, self.xv_), self.dphidx_gc1_1, yr)
+		dphidy = interpn((self.xv_, self.xv_), self.dphidy_gc1_1, yr)
+		dy_gc1 = xp.concatenate((- (dphidy * xp.exp(- 1j * t)).imag, (dphidx * xp.exp(- 1j * t)).imag), axis=None)
+		if self.gc_order == 1:
+			return dy_gc1
+		elif self.gc_order == 2:
+			dphidx_0 = interpn((self.xv_, self.xv_), self.dphidx_gc2_0, yr)
+			dphidy_0 = interpn((self.xv_, self.xv_), self.dphidy_gc2_0, yr)
+			dphidx_2 = interpn((self.xv_, self.xv_), self.dphidx_gc2_2, yr)
+			dphidy_2 = interpn((self.xv_, self.xv_), self.dphidy_gc2_2, yr)
+			dy_gc2 = xp.concatenate((- dphidy_0.real + (dphidy_2 * xp.exp(- 2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(- 2j * t)).real), axis=None)
+			return dy_gc1 + dy_gc2
 
-    def save_data(self, name, data, filestr, info=[]):
-        if self.save_results:
-            mdic = self.DictParams.copy()
-            mdic.update({'data': data, 'info': info})
-            date_today = date.today().strftime(" %B %d, %Y\n")
-            mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
-            savemat(type(self).__name__ + '_' + name + '_' + filestr + '.mat', mdic)
+	def save_data(self, name, data, filestr, info=[]):
+		if self.save_results:
+			mdic = self.DictParams.copy()
+			mdic.update({'data': data, 'info': info})
+			date_today = date.today().strftime(" %B %d, %Y\n")
+			mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
+			savemat(type(self).__name__ + '_' + name + '_' + filestr + '.mat', mdic)
 
 if __name__ == "__main__":
 	main()
