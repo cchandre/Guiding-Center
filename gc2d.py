@@ -13,11 +13,11 @@ def main():
 	dict_params = {
         'N': 2 ** 10,
         'M': 25,
-        'A': 0.5}
+        'A': 0.8}
 	dict_params.update({
         'FLR': [True, False],
         'flr_order': ['all', 'all'],
-        'rho': 0.01,
+        'rho': 0.03,
         'gc_order': 1,
         'eta': 0.1})
 	dict_params.update({
