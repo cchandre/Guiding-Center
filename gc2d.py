@@ -78,7 +78,7 @@ def main():
 		max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
 		+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
 		trapped = (max_y <= xp.pi).sum()
-		case.save_data('diffusion', [trapped, diff_data.slope], filestr, info='trapped particles / diffusion coefficient')
+		case.save_data('diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
 		print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 		print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
 		print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
