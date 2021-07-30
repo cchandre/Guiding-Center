@@ -33,6 +33,8 @@ def main():
         'plot_results': True})
 
 	case = GC2D(dict_params)
+	print('\033[92m    {} \033[00m'.format(case.__str__()))
+	print('\033[92m    A = {}   rho = {}   eta = {} \033[00m'.format(case.A, case.rho, case.eta))
 	filestr = ('A' + str(case.A) + '_FLR' + str(case.rho) + '_GC' + str(case.gc_order)).replace('.', '')
 	if case.gc_order == 2:
 		filestr += ('_eta' + str(case.eta)).replace('.', '')
@@ -88,10 +90,10 @@ def main():
 
 class GC2D:
 	def __repr__(self):
-		return '{self.__class__.name__}({self.DictParams})'.format(self=self)
+		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.gc_order}'.format(self=self)
+		return '2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.flr_order} and GC order = {self.gc_order}'.format(self=self)
 
 	def __init__(self, dict_params):
 		if not dict_params['FLR'][0]:
