@@ -8,50 +8,12 @@ from scipy.io import savemat
 import time
 from datetime import date
 from dict_gc2d_s import dict_list
-from gc2d import save_data
+from gc2d import save_data, run_method
 
 def main():
 	for dict_params in dict_list:
 		case = GC2Ds(dict_params)
-		print('\033[92m    {} \033[00m'.format(case.__str__()))
-		print('\033[92m    A = {}   rho = {}   eta = {} \033[00m'.format(case.A, case.rho, case.eta))
-		filestr = ('A' + str(case.A) + '_FLR' + str(case.rho) + '_GC' + str(case.gc_order)).replace('.', '')
-		if case.gc_order == 2:
-			filestr += ('_eta' + str(case.eta)).replace('.', '')
-		if case.method == 'poincare':
-			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
-			t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
-			start = time.time()
-			sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-			print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-			if case.modulo:
-				sol.y = sol.y % (2.0 * xp.pi)
-			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
-			if case.plot_results:
-				plt.figure(figsize=(8, 8))
-				plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
-				plt.show()
-		elif case.method == 'diffusion':
-			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
-			t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
-			start = time.time()
-			sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-			print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-			r2 = xp.zeros(case.Tf)
-			for t in range(case.Tf):
-				r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
-			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-			max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
-			+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
-			trapped = (max_y <= 3.0 * xp.pi).sum()
-			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
-			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
-			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-			if case.plot_results:
-				plt.figure(figsize=(8, 8))
-				plt.plot(t_eval, r2, 'b', linewidth=2)
-				plt.show()
+		run_method(case)
 
 
 class GC2Ds:
@@ -112,7 +74,7 @@ class GC2Ds:
 			v2p2 = self.A22 * (beta_b ** 2) * xp.sin(2.0 * (y[:self.Ntraj] + y[self.Ntraj:]))
 			dy_gc2 = 2.0 * xp.array([v20[self.Ntraj:] + v2p2 - v2m2, - v20[:self.Ntraj] - v2p2 - v2m2])
 			return (dy_gc1 + dy_gc2).reshape(2 * self.Ntraj)
-			
+
 
 if __name__ == "__main__":
 	main()
