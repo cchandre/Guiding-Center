@@ -7,67 +7,51 @@ import matplotlib.pyplot as plt
 from scipy.io import savemat
 import time
 from datetime import date
+from dict_gc2d_s import dict_list
+from gc2d import save_data
 
 def main():
-	dict_params = {
-        'M': 5,
-        'A': 0.628318530717959}
-	dict_params.update({
-        'FLR': [False, False],
-        'flr_order': ['all', 'all'],
-        'rho': 0.7,
-        'gc_order': 1,
-        'eta': 0.1})
-	dict_params.update({
-        #'method': 'poincare',
-        'method': 'diffusion',
-        'modulo': True,
-        'Ntraj': 1000,
-        'Tf': 1000,
-        'timestep': 0.03,
-        'save_results': False,
-        'plot_results': True})
-
-	case = GC2Ds(dict_params)
-	print('\033[92m    {} \033[00m'.format(case.__str__()))
-	print('\033[92m    A = {}   rho = {}   eta = {} \033[00m'.format(case.A, case.rho, case.eta))
-	filestr = ('A' + str(case.A) + '_FLR' + str(case.rho) + '_GC' + str(case.gc_order)).replace('.', '')
-	if case.gc_order == 2:
-		filestr += ('_eta' + str(case.eta)).replace('.', '')
-	if case.method == 'poincare':
-		y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
-		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
-		start = time.time()
-		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		if case.modulo:
-			sol.y = sol.y % (2.0 * xp.pi)
-		case.save_data('poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
-		if case.plot_results:
-			plt.figure(figsize=(8, 8))
-			plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
-			plt.show()
-	elif case.method == 'diffusion':
-		y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
-		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
-		start = time.time()
-		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		r2 = xp.zeros(case.Tf)
-		for t in range(case.Tf):
-			r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
-		diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-		max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
-		+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
-		trapped = (max_y <= 3.0 * xp.pi).sum()
-		case.save_data('diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
-		print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-		print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
-		print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-		if case.plot_results:
-			plt.figure(figsize=(8, 8))
-			plt.plot(t_eval, r2, 'b', linewidth=2)
-			plt.show()
+	for dict_params in dict_list:
+		case = GC2Ds(dict_params)
+		print('\033[92m    {} \033[00m'.format(case.__str__()))
+		print('\033[92m    A = {}   rho = {}   eta = {} \033[00m'.format(case.A, case.rho, case.eta))
+		filestr = ('A' + str(case.A) + '_FLR' + str(case.rho) + '_GC' + str(case.gc_order)).replace('.', '')
+		if case.gc_order == 2:
+			filestr += ('_eta' + str(case.eta)).replace('.', '')
+		if case.method == 'poincare':
+			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+			t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
+			start = time.time()
+			sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
+			print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
+			if case.modulo:
+				sol.y = sol.y % (2.0 * xp.pi)
+			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
+			if case.plot_results:
+				plt.figure(figsize=(8, 8))
+				plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+				plt.show()
+		elif case.method == 'diffusion':
+			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+			t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
+			start = time.time()
+			sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
+			print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
+			r2 = xp.zeros(case.Tf)
+			for t in range(case.Tf):
+				r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
+			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
+			max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
+			+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
+			trapped = (max_y <= 3.0 * xp.pi).sum()
+			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
+			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
+			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
+			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
+			if case.plot_results:
+				plt.figure(figsize=(8, 8))
+				plt.plot(t_eval, r2, 'b', linewidth=2)
+				plt.show()
 
 
 class GC2Ds:
@@ -128,16 +112,7 @@ class GC2Ds:
 			v2p2 = self.A22 * (beta_b ** 2) * xp.sin(2.0 * (y[:self.Ntraj] + y[self.Ntraj:]))
 			dy_gc2 = 2.0 * xp.array([v20[self.Ntraj:] + v2p2 - v2m2, - v20[:self.Ntraj] - v2p2 - v2m2])
 			return (dy_gc1 + dy_gc2).reshape(2 * self.Ntraj)
-
-	def save_data(self, name, data, filestr, info=[]):
-		if self.save_results:
-			mdic = self.DictParams.copy()
-			mdic.update({'data': data, 'info': info})
-			date_today = date.today().strftime(" %B %d, %Y\n")
-			mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
-			name_file = type(self).__name__ + '_' + name + '_' + filestr + '.mat'
-			savemat(name_file, mdic)
-			print('\033[92m    Results saved in {} \033[00m'.format(name_file))
+			
 
 if __name__ == "__main__":
 	main()
