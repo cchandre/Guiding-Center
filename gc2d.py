@@ -5,6 +5,7 @@ from scipy.interpolate import interpn
 from scipy.integrate import solve_ivp
 from scipy.special import jv
 import sympy as sp
+from scipy.stats import linregress
 from scipy.io import savemat
 import time
 from datetime import date
@@ -13,11 +14,11 @@ def main():
 	dict_params = {
         'N': 2 ** 10,
         'M': 25,
-        'A': 0.8}
+        'A': 0.9}
 	dict_params.update({
         'FLR': [True, False],
         'flr_order': ['all', 'all'],
-        'rho': 0.09,
+        'rho': 0.03,
         'gc_order': 1,
         'eta': 0.1})
 	dict_params.update({
@@ -54,7 +55,7 @@ def main():
 		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-		print('Computation finished in {} seconds'.format(int(time.time() - start)))
+		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		if case.modulo:
 			sol.y = sol.y % (2.0 * xp.pi)
 		case.save_data('poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
@@ -67,14 +68,18 @@ def main():
 		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-		print('Computation finished in {} seconds'.format(int(time.time() - start)))
+		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		r2 = xp.zeros(case.Tf)
 		for t in range(case.Tf):
 			r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
+		diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
 		max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
 		+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
 		trapped = (max_y <= xp.pi).sum()
-		case.save_data('diffusion', [t_eval, r2], filestr, info='trapped particles = {}'.format(trapped))
+		case.save_data('diffusion', [trapped, diff_data.slope], filestr, info='trapped particles / diffusion coefficient')
+		print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
+		print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
+		print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
 		if case.plot_results:
 			plt.figure(figsize=(8, 8))
 			plt.plot(t_eval, r2, 'b', linewidth=2)
@@ -86,7 +91,7 @@ class GC2D:
 		return '{self.__class__.name__}({self.DictParams})'.format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.name__}) with FLR = {self.FLR} and GC order = {self.gc_order}'.format(self=self)
+		return '2D Guiding Center ({self.__class__.name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.gc_order}'.format(self=self)
 
 	def __init__(self, dict_params):
 		if not dict_params['FLR'][0]:
@@ -165,7 +170,9 @@ class GC2D:
 			mdic.update({'data': data, 'info': info})
 			date_today = date.today().strftime(" %B %d, %Y\n")
 			mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
-			savemat(type(self).__name__ + '_' + name + '_' + filestr + '.mat', mdic)
+			name_file = type(self).__name__ + '_' + name + '_' + filestr + '.mat'
+			savemat(name_file, mdic)
+			print('\033[92m    Results saved in {} \033[00m'.format(name_file))
 
 if __name__ == "__main__":
 	main()
