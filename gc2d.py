@@ -17,7 +17,7 @@ def main():
 	dict_params.update({
         'FLR': [True, False],
         'flr_order': ['all', 'all'],
-        'rho': 0.03,
+        'rho': 0.09,
         'gc_order': 1,
         'eta': 0.1})
 	dict_params.update({
