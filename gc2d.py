@@ -4,7 +4,7 @@ from scipy.interpolate import interpn
 from scipy.special import jv, eval_chebyu
 import sympy as sp
 from gc2d_modules import run_method
-from dict_gc2d import dict_list
+from gc2d_dict import dict_list
 
 def main():
 	for dict_params in dict_list:
