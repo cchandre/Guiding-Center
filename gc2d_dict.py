@@ -19,21 +19,22 @@
 ## plot_results: boolean; if True, the results are plotted right after the computation
 ##
 ########################################################################################################################
+import numpy as xp
 
 potential = 'KMdCN'
 method = 'diffusion'
 
-flr = ['none', 'all']
-gc_order = 2
+flr = ['all', 'all']
+gc_order = 1
 
-vec_iteratable = [0.4, 0.5, 0.6]
-iteratable = 'A'
-#A = 0.5
-rho = 0.7
-eta = 0.1
+iteratable = 'rho'
+vec_iteratable = xp.linspace(0, 0.9, 50)
+A = 0.63
+#rho = 0.7
+eta = 0.0
 
-Ntraj = 1000
-Tf = 1000
+Ntraj = 10000
+Tf = 5000
 modulo = False
 timestep = 0.03
 save_results = True
