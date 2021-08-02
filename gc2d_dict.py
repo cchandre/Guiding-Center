@@ -27,8 +27,8 @@ method = 'diffusion'
 flr = ['all', 'all']
 gc_order = 1
 
-iteratable = 'rho'
-vec_iteratable = xp.linspace(0, 0.9, 50)
+iterable_name = 'rho'
+iterable_values = xp.linspace(0, 0.9, 50)
 A = 0.63
 #rho = 0.7
 eta = 0.0
@@ -41,9 +41,9 @@ save_results = True
 plot_results = False
 
 ########################################################################################################################
-dict_list = [{'potential': potential} for _ in range(len(vec_iteratable))]
-for it in range(len(vec_iteratable)):
-	dict_list[it].update({iteratable: vec_iteratable[it]})
+dict_list = [{'potential': potential} for _ in range(len(iterable_values))]
+for it in range(len(iterable_values)):
+	dict_list[it].update({iteratable_name: iterable_values[it]})
 
 if flr[0] == 'none' and flr[1] == 'none':
 	rho = 0
