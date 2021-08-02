@@ -32,18 +32,19 @@ class GC2Dt:
 		self.xv = xp.linspace(0, 2.0 * xp.pi, self.N, endpoint=False, dtype=xp.float64)
 		self.xv_ = xp.linspace(0, 2.0 * xp.pi, self.N + 1, dtype=xp.float64)
 		nm = xp.meshgrid(fftfreq(self.N, d=1/self.N), fftfreq(self.N, d=1/self.N), indexing='ij')
+		sqrt_nm = xp.sqrt(nm[0] ** 2 + nm[1] ** 2)
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
 		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0] ** 2 + n[1] ** 2) ** 1.5).astype(xp.complex128) * xp.exp(1j * phases)
-		fft_phi[nm[0] ** 2 + nm[1] ** 2 > self.M **2] = 0.0
+		fft_phi[sqrt_nm > self.M] = 0.0
 		if (self.flr[0] == 'none') or (self.flr[0] in range(2)):
 			flr1_coeff = 1.0
 		elif self.flr[0] == 'all':
-			flr1_coeff = jv(0, self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2))
+			flr1_coeff = jv(0, self.rho * sqrt_nm)
 		elif isinstance(self.flr[0], int):
 			x = sp.Symbol('x')
 			flr_expansion = sp.besselj(0, x).series(x, 0, self.flr[0] + 1).removeO()
 			flr_func = sp.lambdify(x, flr_expansion)
-			flr1_coeff = flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2))
+			flr1_coeff = flr_func(self.rho * sqrt_nm)
 		fft_phi_ = flr1_coeff * fft_phi
 		self.phi = ifft2(fft_phi) * (self.N ** 2)
 		self.phi_ = ifft2(fft_phi_) * (self.N ** 2)
@@ -54,12 +55,11 @@ class GC2Dt:
 			self.phi_gc2_2 = - self.eta * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
 		else:
 			if self.flr[1] == 'all':
-				flr2_coeff = - xp.sqrt(nm[0] ** 2 + nm[1] ** 2) * jv(1, self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) / self.rho
+				flr2_coeff = - sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
 			elif isinstance(self.flr[1], int):
 				x = sp.Symbol('x')
-				flr_expansion = sp.besselj(1, x).series(x, 0, self.flr[1] + 1).removeO()
-				flr_func = sp.lambdify(x, flr_expansion)
-				flr2_coeff = - xp.sqrt(nm[0] ** 2 + nm[1] ** 2) * flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) / self.rho
+				flr_exp = sp.besselj(1, x).series(x, 0, self.flr[1] + 1).removeO()
+				flr2_coeff = - sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
 			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
 			self.phi_gc2_0 = - self.eta * (self.flr2(xp.abs(self.phi) **2) - self.phi_ * self.flr2(self.phi.conjugate()) - self.phi_.conjugate() * self.flr2(self.phi)).real / 2.0
 			self.phi_gc2_2 = - self.eta * (self.flr2(self.phi ** 2) - 2.0 * self.phi_ * self.flr2(self.phi)) / 2.0

@@ -10,9 +10,9 @@ from datetime import date
 def run_method(case):
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {}   rho = {}   eta = {} \033[00m'.format(case.A, case.rho, case.eta))
-	filestr = ('A' + str(case.A) + '_FLR' + str(case.rho) + '_GC' + str(case.gc_order)).replace('.', '')
+	filestr = 'A {:.4f} _RHO {:.4f}'.format(case.A, case.rho).replace('.', '')
 	if case.gc_order == 2:
-		filestr += ('_eta' + str(case.eta)).replace('.', '')
+		filestr += '_ETA {:.4f}'.format(case.eta).replace('.', '')
 	if case.method == 'plot_potentials':
 		data = xp.array([case.phi, case.phi_, case.phi_gc2_0, case.phi_gc2_2])
 		save_data(case, 'potentials', data, filestr)
