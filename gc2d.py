@@ -7,19 +7,11 @@ from gc2d_modules import run_method
 from gc2d_dict import dict_list
 
 def main():
-	for dict_params in dict_list:
-		if not dict_params['FLR'][0]:
-			dict_params['flr_order'][0] = 0
-		if not dict_params['FLR'][1]:
-			dict_params['flr_order'][1] = 0
-		if not dict_params['FLR'][0] and not dict_params['FLR'][1]:
-			dict_params['rho'] = 0
-		if dict_params['gc_order'] == 1:
-			dict_params['eta'] = 0
-		if dict_params['potential'] == 'KMdCN':
-			case = GC2Dk(dict_params)
-		elif dict_params['potential'] == 'turbulent':
-			case = GC2Dt(dict_params)
+	for dict in dict_list:
+		if dict['potential'] == 'KMdCN':
+			case = GC2Dk(dict)
+		elif dict['potential'] == 'turbulent':
+			case = GC2Dt(dict)
 		run_method(case)
 
 
@@ -28,12 +20,12 @@ class GC2Dt:
 		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.flr_order} and GC order = {self.gc_order}'.format(self=self)
+		return '2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.flr} and GC order = {self.gc_order}'.format(self=self)
 
-	def __init__(self, dict_params):
-		for key in dict_params:
-			setattr(self, key, dict_params[key])
-		self.DictParams = dict_params
+	def __init__(self, dict):
+		for key in dict:
+			setattr(self, key, dict[key])
+		self.DictParams = dict
 		xp.random.seed(27)
 		phases = 2.0 * xp.pi * xp.random.random((self.M, self.M))
 		n = xp.meshgrid(xp.arange(1, self.M+1), xp.arange(1, self.M+1), indexing='ij')
@@ -43,13 +35,13 @@ class GC2Dt:
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
 		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0] ** 2 + n[1] ** 2) ** 1.5).astype(xp.complex128) * xp.exp(1j * phases)
 		fft_phi[nm[0] ** 2 + nm[1] ** 2 > self.M **2] = 0.0
-		if self.flr_order[0] in range(2):
+		if (self.flr[0] == 'none') or (self.flr[0] in range(2)):
 			flr1_coeff = 1.0
-		elif self.flr_order[0] == 'all':
+		elif self.flr[0] == 'all':
 			flr1_coeff = jv(0, self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2))
-		else:
+		elif isinstance(self.flr[0], int):
 			x = sp.Symbol('x')
-			flr_expansion = sp.besselj(0, x).series(x, 0, self.flr_order[0] + 1).removeO()
+			flr_expansion = sp.besselj(0, x).series(x, 0, self.flr[0] + 1).removeO()
 			flr_func = sp.lambdify(x, flr_expansion)
 			flr1_coeff = flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2))
 		fft_phi_ = flr1_coeff * fft_phi
@@ -57,15 +49,15 @@ class GC2Dt:
 		self.phi_ = ifft2(fft_phi_) * (self.N ** 2)
 		self.dphidx = ifft2(1j * nm[0] * fft_phi) * (self.N ** 2)
 		self.dphidy = ifft2(1j * nm[1] * fft_phi) * (self.N ** 2)
-		if self.flr_order[1] in range(3):
+		if (self.flr[1] == 'none') or (self.flr[1] in range(3)):
 			self.phi_gc2_0 = - self.eta * (xp.abs(self.dphidx) ** 2 + xp.abs(self.dphidy) ** 2) / 2.0
 			self.phi_gc2_2 = - self.eta * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
 		else:
-			if self.flr_order[1] == 'all':
+			if self.flr[1] == 'all':
 				flr2_coeff = - xp.sqrt(nm[0] ** 2 + nm[1] ** 2) * jv(1, self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) / self.rho
-			else:
+			elif isinstance(self.flr[1], int):
 				x = sp.Symbol('x')
-				flr_expansion = sp.besselj(1, x).series(x, 0, self.flr_order[1] + 1).removeO()
+				flr_expansion = sp.besselj(1, x).series(x, 0, self.flr[1] + 1).removeO()
 				flr_func = sp.lambdify(x, flr_expansion)
 				flr2_coeff = - xp.sqrt(nm[0] ** 2 + nm[1] ** 2) * flr_func(self.rho * xp.sqrt(nm[0] ** 2 + nm[1] ** 2)) / self.rho
 			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
@@ -99,35 +91,35 @@ class GC2Dk:
 		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.__name__}) for the Kryukov-Martinell-delCastilloNegrete potential with FLR = {self.flr_order} and GC order = {self.gc_order}'.format(self=self)
+		return '2D Guiding Center ({self.__class__.__name__}) for the Kryukov-Martinell-delCastilloNegrete potential with FLR = {self.flr} and GC order = {self.gc_order}'.format(self=self)
 
-	def __init__(self, dict_params):
-		for key in dict_params:
-			setattr(self, key, dict_params[key])
-		self.DictParams = dict_params
-		if self.flr_order[0] in range(2):
+	def __init__(self, dict):
+		for key in dict:
+			setattr(self, key, dict[key])
+		self.DictParams = dict
+		if (self.flr[0] == 'none') or (self.flr[0] in range(2)):
 			flr1_coeff = 1.0
-		elif self.flr_order[0] == 'all':
+		elif self.flr[0] == 'all':
 			flr1_coeff = jv(0, self.rho * xp.sqrt(2.0))
-		else:
+		elif isinstance(self.flr[0], int):
 			x = sp.Symbol('x')
-			flr_exp = sp.besselj(0, x).series(x, 0, self.flr_order[0] + 1).removeO()
+			flr_exp = sp.besselj(0, x).series(x, 0, self.flr[0] + 1).removeO()
 			flr1_coeff = sp.lambdify(x, flr_exp)(self.rho * xp.sqrt(2.0))
 		self.A1 = self.A * flr1_coeff
-		if self.flr_order[1] in range(2):
+		if (self.flr[1] == 'none') or (self.flr[1] in range(2)):
 			flr2_coeff20 = 0.0
 			flr2_coeff22 = - 0.25
-		elif self.flr_order[1] == 'all':
+		elif self.flr[1] == 'all':
 			flr2_coeff20 = - 2.0 * (jv(1, self.rho * 2.0) - xp.sqrt(2.0) *  jv(0, self.rho * xp.sqrt(2.0)) * jv(1, self.rho * xp.sqrt(2.0))) / self.rho
 			flr2_coeff22 = - xp.sqrt(2.0) * (jv(1, self.rho * 2.0 * xp.sqrt(2.0)) - jv(0, self.rho * xp.sqrt(2.0)) * jv(1, self.rho * xp.sqrt(2.0))) / self.rho
-		else:
+		elif isinstance(self.flr[1], int):
 			x = sp.Symbol('x')
-			flr2_exp20 = - 2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr_order[1] + 1).removeO()
-			flr2_exp22 = - sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr_order[1] + 1).removeO()
+			flr2_exp20 = - 2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr[1] + 1).removeO()
+			flr2_exp22 = - sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr[1] + 1).removeO()
 			flr2_coeff20 = sp.lambdify(x, flr2_exp20)(self.rho)
 			flr2_coeff22 = sp.lambdify(x, flr2_exp22)(self.rho)
-		self.A20 = - self.A ** 2 * self.eta * flr2_coeff20
-		self.A22 = - self.A ** 2 * self.eta * flr2_coeff22
+		self.A20 = - (self.A ** 2) * self.eta * flr2_coeff20
+		self.A22 = - (self.A ** 2) * self.eta * flr2_coeff22
 
 	def eqn_phi(self, t, y):
 		cheby_coeff = eval_chebyu(self.M - 1, xp.cos(t))
