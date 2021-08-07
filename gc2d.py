@@ -4,15 +4,29 @@ from scipy.interpolate import interpn
 from scipy.special import jv, eval_chebyu
 import sympy as sp
 from gc2d_modules import run_method
-from gc2d_dict import dict_list
+from gc2d_dict import dict_list, parallelization
+import multiprocess
+
+
+def run_case(dict):
+	if dict['potential'] == 'KMdCN':
+		case = GC2Dk(dict)
+	elif dict['potential'] == 'turbulent':
+		case = GC2Dt(dict)
+	run_method(case)
+
 
 def main():
-	for dict in dict_list:
-		if dict['potential'] == 'KMdCN':
-			case = GC2Dk(dict)
-		elif dict['potential'] == 'turbulent':
-			case = GC2Dt(dict)
-		run_method(case)
+	if parallelization[0]:
+		if parallelization[1] == 'all':
+			num_cores = multiprocess.cpu_count()
+		else:
+			num_cores = min(multiprocess.cpu_count(), parallelization[1])
+		pool = multiprocess.Pool(num_cores)
+		pool.map(run_case, dict_list)
+	else:
+		for dict in dict_list:
+			run_case(dict)
 
 
 class GC2Dt:
@@ -48,11 +62,8 @@ class GC2Dt:
 		fft_phi_ = flr1_coeff * fft_phi
 		self.phi = ifft2(fft_phi) * (self.N ** 2)
 		self.phi_ = ifft2(fft_phi_) * (self.N ** 2)
-		self.dphidx = ifft2(1j * nm[0] * fft_phi) * (self.N ** 2)
-		self.dphidy = ifft2(1j * nm[1] * fft_phi) * (self.N ** 2)
-		if (self.flr[1] == 'none') or (self.flr[1] in range(3)):
-			self.phi_gc2_0 = - self.eta * (xp.abs(self.dphidx) ** 2 + xp.abs(self.dphidy) ** 2) / 2.0
-			self.phi_gc2_2 = - self.eta * (self.dphidx ** 2 + self.dphidy ** 2) / 2.0
+		if (self.flr[1] == 'none') or (self.flr[1] in range(3)) or (self.rho == 0.0):
+			flr2_coeff = - sqrt_nm ** 2 / 2.0
 		else:
 			if self.flr[1] == 'all':
 				flr2_coeff = - sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
@@ -106,18 +117,19 @@ class GC2Dk:
 			flr_exp = sp.besselj(0, x).series(x, 0, self.flr[0] + 1).removeO()
 			flr1_coeff = sp.lambdify(x, flr_exp)(self.rho * xp.sqrt(2.0))
 		self.A1 = self.A * flr1_coeff
-		if (self.flr[1] == 'none') or (self.flr[1] in range(2)):
+		if (self.flr[1] == 'none') or (self.flr[1] in range(2)) or (self.rho == 0.0):
 			flr2_coeff20 = 0.0
-			flr2_coeff22 = - 0.25
-		elif self.flr[1] == 'all':
-			flr2_coeff20 = - 2.0 * (jv(1, self.rho * 2.0) - xp.sqrt(2.0) *  jv(0, self.rho * xp.sqrt(2.0)) * jv(1, self.rho * xp.sqrt(2.0))) / self.rho
-			flr2_coeff22 = - xp.sqrt(2.0) * (jv(1, self.rho * 2.0 * xp.sqrt(2.0)) - jv(0, self.rho * xp.sqrt(2.0)) * jv(1, self.rho * xp.sqrt(2.0))) / self.rho
-		elif isinstance(self.flr[1], int):
-			x = sp.Symbol('x')
-			flr2_exp20 = - 2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr[1] + 1).removeO()
-			flr2_exp22 = - sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr[1] + 1).removeO()
-			flr2_coeff20 = sp.lambdify(x, flr2_exp20)(self.rho)
-			flr2_coeff22 = sp.lambdify(x, flr2_exp22)(self.rho)
+			flr2_coeff22 = - 1.0
+		else:
+			if self.flr[1] == 'all':
+				flr2_coeff20 = - 2.0 * (jv(1, self.rho * 2.0) - xp.sqrt(2.0) *  jv(0, self.rho * xp.sqrt(2.0)) * jv(1, self.rho * xp.sqrt(2.0))) / self.rho
+				flr2_coeff22 = - xp.sqrt(2.0) * (jv(1, self.rho * 2.0 * xp.sqrt(2.0)) - jv(0, self.rho * xp.sqrt(2.0)) * jv(1, self.rho * xp.sqrt(2.0))) / self.rho
+			elif isinstance(self.flr[1], int):
+				x = sp.Symbol('x')
+				flr2_exp20 = - 2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr[1] + 1).removeO()
+				flr2_exp22 = - sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.flr[1] + 1).removeO()
+				flr2_coeff20 = sp.lambdify(x, flr2_exp20)(self.rho)
+				flr2_coeff22 = sp.lambdify(x, flr2_exp22)(self.rho)
 		self.A20 = - (self.A ** 2) * self.eta * flr2_coeff20
 		self.A22 = - (self.A ** 2) * self.eta * flr2_coeff22
 

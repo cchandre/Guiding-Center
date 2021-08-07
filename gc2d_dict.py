@@ -17,6 +17,7 @@
 ## timestep: float; time step used by the integrator
 ## save_results: boolean; if True, the results are saved in a .mat file
 ## plot_results: boolean; if True, the results are plotted right after the computation
+## parallelization: 2d array [boolean, int]; True for parallelization, int is the number of processors to be used
 ##
 ########################################################################################################################
 import numpy as xp
@@ -28,22 +29,23 @@ flr = ['all', 'all']
 gc_order = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0, 0.9, 50)
+iterable_values = xp.linspace(0.0, 1.0, 5)
 A = 0.63
 #rho = 0.7
 eta = 0.0
 
-Ntraj = 10000
-Tf = 5000
+Ntraj = 1000
+Tf = 500
 modulo = False
 timestep = 0.03
 save_results = True
 plot_results = False
+parallelization = [True, 5]
 
 ########################################################################################################################
 dict_list = [{'potential': potential} for _ in range(len(iterable_values))]
 for it in range(len(iterable_values)):
-	dict_list[it].update({iteratable_name: iterable_values[it]})
+	dict_list[it].update({iterable_name: iterable_values[it]})
 
 if flr[0] == 'none' and flr[1] == 'none':
 	rho = 0
