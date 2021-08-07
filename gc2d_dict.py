@@ -1,25 +1,25 @@
 ########################################################################################################################
-##                                   Definition of the parameters for GC2D
+##                                   Definition of the parameters for GC2D                                            ##
 ########################################################################################################################
-##
-## potential: string; 'KMdCN' or 'turbulent'
-## method: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'
-## flr: array of length 2; 'none', 'all' or integer; FLR order for each GC order
-## gc_order: 1 or 2; GC order
-## A: float; amplitude of the electrostatic potential
-## rho: float; value of the Larmor radius
-## eta: float; amplitude of the GC order 2 potential
-## M: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent')
-## N: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)
-## Ntraj: integer; number of trajectories to be integrated
-## Tf: integer; number of periods for the integration of the trajectories
-## init: boolean; 'random' or 'fixed'
-## modulo: boolean; only for method='poincare'; if True, x and y are taken modulo 2*pi
-## timestep: float; time step used by the integrator
-## save_results: boolean; if True, the results are saved in a .mat file
-## plot_results: boolean; if True, the results are plotted right after the computation
-## parallelization: 2d array [boolean, int]; True for parallelization, int is the number of processors to be used
-##
+##                                                                                                                    ##
+##   potential: string; 'KMdCN' or 'turbulent'                                                                        ##
+##   method: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'                                ##
+##   flr: array of length 2; 'none', 'all' or integer; FLR order for each GC order                                    ##
+##   gc_order: 1 or 2; GC order                                                                                       ##
+##   A: float; amplitude of the electrostatic potential                                                               ##
+##   rho: float; value of the Larmor radius                                                                           ##
+##   eta: float; amplitude of the GC order 2 potential                                                                ##
+##   M: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent')                                     ##
+##   N: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)                                    ##
+##   Ntraj: integer; number of trajectories to be integrated                                                          ##
+##   Tf: integer; number of periods for the integration of the trajectories                                           ##
+##   init: boolean; 'random' or 'fixed'                                                                               ##
+##   modulo: boolean; only for method='poincare'; if True, x and y are taken modulo 2*pi                              ##
+##   timestep: float; time step used by the integrator                                                                ##
+##   save_results: boolean; if True, the results are saved in a .mat file                                             ##
+##   plot_results: boolean; if True, the results are plotted right after the computation                              ##
+##   parallelization: 2d array [boolean, int]; True for parallelization, int is the number of processors to be used   ##
+##                                                                                                                    ##
 ########################################################################################################################
 import numpy as xp
 
