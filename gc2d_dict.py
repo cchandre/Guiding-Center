@@ -2,7 +2,7 @@
 ##                                   Definition of the parameters for GC2D
 ########################################################################################################################
 ##
-## potential: string; 'KMdCN' for Kryukov-Martinell-delCastilloNegrete, 'turbulent' for the turbulent potential
+## potential: string; 'KMdCN' or 'turbulent'
 ## method: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'
 ## flr: array of length 2; 'none', 'all' or integer; FLR order for each GC order
 ## gc_order: 1 or 2; GC order
@@ -13,6 +13,7 @@
 ## N: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)
 ## Ntraj: integer; number of trajectories to be integrated
 ## Tf: integer; number of periods for the integration of the trajectories
+## init: boolean; 'random' or 'fixed'
 ## modulo: boolean; only for method='poincare'; if True, x and y are taken modulo 2*pi
 ## timestep: float; time step used by the integrator
 ## save_results: boolean; if True, the results are saved in a .mat file
@@ -36,6 +37,7 @@ eta = 0.0
 
 Ntraj = 1000
 Tf = 500
+init = 'random'
 modulo = False
 timestep = 0.03
 save_results = True
@@ -72,6 +74,7 @@ for dict in dict_list:
     	'modulo': modulo,
     	'Ntraj': Ntraj,
 	    'Tf': Tf,
+		'init': init,
     	'timestep': timestep,
     	'save_results': save_results,
     	'plot_results': plot_results})

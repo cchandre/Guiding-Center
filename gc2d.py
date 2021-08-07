@@ -102,7 +102,7 @@ class GC2Dk:
 		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.__name__}) for the Kryukov-Martinell-delCastilloNegrete potential with FLR = {self.flr} and GC order = {self.gc_order}'.format(self=self)
+		return '2D Guiding Center ({self.__class__.__name__}) for the KMdCN potential with FLR = {self.flr} and GC order = {self.gc_order}'.format(self=self)
 
 	def __init__(self, dict):
 		for key in dict:

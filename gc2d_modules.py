@@ -28,7 +28,12 @@ def run_method(case):
 			plt.colorbar()
 			plt.show()
 	elif case.method == 'poincare':
-		y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+		if case.init == 'random':
+			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+		elif case.init == 'fixed':
+			y_vec = xp.linspace(0.0, 2.0 * xp.pi, int(xp.sqrt(case.Ntraj)), endpoint=False)
+			y_mat = xp.meshgrid(y_vec, y_vec)
+			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
 		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
@@ -41,7 +46,12 @@ def run_method(case):
 			plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
 			plt.show()
 	elif case.method == 'diffusion':
-		y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+		if case.init == 'random':
+			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+		elif case.init == 'fixed':
+			y_vec = xp.linspace(0.0, 2.0 * xp.pi, int(xp.sqrt(case.Ntraj)), endpoint=False)
+			y_mat = xp.meshgrid(y_vec, y_vec)
+			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
 		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
