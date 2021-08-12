@@ -26,6 +26,7 @@ def run_method(case):
 			plt.figure(figsize=(8, 8))
 			plt.pcolor(case.xv, case.xv, case.phi_gc2_0 - case.phi_gc2_2.real, shading='auto')
 			plt.colorbar()
+			plt.pause(0.5)
 	elif case.method in ['poincare', 'diffusion']:
 		if case.init == 'random':
 			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
@@ -45,6 +46,7 @@ def run_method(case):
 			if case.plot_results:
 				plt.figure(figsize=(8, 8))
 				plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+				plt.pause(0.5)
 		if case.method == 'diffusion':
 			r2 = xp.zeros(case.Tf)
 			for t in range(case.Tf):
@@ -60,6 +62,7 @@ def run_method(case):
 			if case.plot_results:
 				plt.figure(figsize=(8, 8))
 				plt.plot(t_eval, r2, 'b', linewidth=2)
+				plt.pause(0.5)
 
 
 def save_data(case, name, data, filestr, info=[]):

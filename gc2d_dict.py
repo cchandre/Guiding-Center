@@ -35,14 +35,14 @@ A = 0.6
 #rho = 0.7
 eta = 0.0
 
-Ntraj = 10
-Tf = 50
+Ntraj = 100
+Tf = 500
 init = 'fixed'
 modulo = True
 timestep = 0.03
 save_results = False
 plot_results = True
-parallelization = [False, 3]
+parallelization = [True, 3]
 
 ########################################################################################################################
 dict_list = [{'potential': potential} for _ in range(len(iterable_values))]
