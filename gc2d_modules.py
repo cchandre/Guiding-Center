@@ -14,20 +14,20 @@ def run_method(case):
 	if case.gc_order == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
 	if case.method == 'plot_potentials':
-		data = xp.array([case.phi, case.phi_, case.phi_gc2_0, case.phi_gc2_2])
+		data = xp.array([case.phi, case.phi_gc1_1, case.phi_gc2_0, case.phi_gc2_2])
 		save_data(case, 'potentials', data, filestr)
 		if case.plot_results:
 			plt.figure(figsize=(8, 8))
 			plt.pcolor(case.xv, case.xv, case.phi.imag, shading='auto')
 			plt.colorbar()
 			plt.figure(figsize=(8, 8))
-			plt.pcolor(case.xv, case.xv, case.phi_.imag, shading='auto')
+			plt.pcolor(case.xv, case.xv, case.phi_gc1_1.imag, shading='auto')
 			plt.colorbar()
 			plt.figure(figsize=(8, 8))
 			plt.pcolor(case.xv, case.xv, case.phi_gc2_0 - case.phi_gc2_2.real, shading='auto')
 			plt.colorbar()
 			plt.show()
-	elif case.method == 'poincare':
+	elif case.method in ['poincare', 'diffusion']:
 		if case.init == 'random':
 			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
@@ -38,39 +38,30 @@ def run_method(case):
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
 		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		if case.modulo:
-			sol.y = sol.y % (2.0 * xp.pi)
-		save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
-		if case.plot_results:
-			plt.figure(figsize=(8, 8))
-			plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
-			plt.show()
-	elif case.method == 'diffusion':
-		if case.init == 'random':
-			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
-		elif case.init == 'fixed':
-			y_vec = xp.linspace(0.0, 2.0 * xp.pi, int(xp.sqrt(case.Ntraj)), endpoint=False)
-			y_mat = xp.meshgrid(y_vec, y_vec)
-			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
-		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
-		start = time.time()
-		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		r2 = xp.zeros(case.Tf)
-		for t in range(case.Tf):
-			r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
-		diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-		max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
-		+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
-		trapped = (max_y <= 3.0 * xp.pi).sum()
-		save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
-		print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-		print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
-		print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-		if case.plot_results:
-			plt.figure(figsize=(8, 8))
-			plt.plot(t_eval, r2, 'b', linewidth=2)
-			plt.show()
+		if case.method == 'poincare':
+			if case.modulo:
+				sol.y = sol.y % (2.0 * xp.pi)
+			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
+			if case.plot_results:
+				plt.figure(figsize=(8, 8))
+				plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+				plt.show()
+		if case.method == 'diffusion':
+			r2 = xp.zeros(case.Tf)
+			for t in range(case.Tf):
+				r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t]) ** 2).sum() / (case.Ntraj * (case.Tf - t))
+			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
+			max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1)) ** 2\
+				+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1)) ** 2).max(axis=1)
+			trapped = (max_y <= 3.0 * xp.pi).sum()
+			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
+			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
+			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
+			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
+			if case.plot_results:
+				plt.figure(figsize=(8, 8))
+				plt.plot(t_eval, r2, 'b', linewidth=2)
+				plt.show()
 
 
 def save_data(case, name, data, filestr, info=[]):
