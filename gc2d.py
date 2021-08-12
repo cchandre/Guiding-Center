@@ -1,4 +1,5 @@
 import numpy as xp
+import matplotlib.pyplot as plt
 from numpy.fft import fft2, ifft2, fftfreq
 from scipy.interpolate import interpn
 from scipy.special import jv, eval_chebyu
@@ -27,6 +28,7 @@ def main():
 	else:
 		for dict in dict_list:
 			run_case(dict)
+	plt.show()
 
 
 class GC2Dt:
@@ -44,7 +46,7 @@ class GC2Dt:
 		phases = 2.0 * xp.pi * xp.random.random((self.M, self.M))
 		n = xp.meshgrid(xp.arange(1, self.M+1), xp.arange(1, self.M+1), indexing='ij')
 		self.xv = xp.linspace(0, 2.0 * xp.pi, self.N, endpoint=False, dtype=xp.float64)
-		self.xv_ = xp.linspace(0, 2.0 * xp.pi, self.N + 1, dtype=xp.float64)
+		self.xy_ = 2 * (xp.linspace(0, 2.0 * xp.pi, self.N + 1, dtype=xp.float64),)
 		nm = xp.meshgrid(fftfreq(self.N, d=1/self.N), fftfreq(self.N, d=1/self.N), indexing='ij')
 		sqrt_nm = xp.sqrt(nm[0] ** 2 + nm[1] ** 2)
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
@@ -71,9 +73,9 @@ class GC2Dt:
 				x = sp.Symbol('x')
 				flr_exp = sp.besselj(1, x).series(x, 0, self.flr[1] + 1).removeO()
 				flr2_coeff = - sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
-			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-			self.phi_gc2_0 = - self.eta * (self.flr2(xp.abs(self.phi) **2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2.0
-			self.phi_gc2_2 = - self.eta * (self.flr2(self.phi ** 2) - 2.0 * self.phi_gc1_1 * self.flr2(self.phi)) / 2.0
+		self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
+		self.phi_gc2_0 = - self.eta * (self.flr2(xp.abs(self.phi) **2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2.0
+		self.phi_gc2_2 = - self.eta * (self.flr2(self.phi ** 2) - 2.0 * self.phi_gc1_1 * self.flr2(self.phi)) / 2.0
 		self.dphidx_gc1_1 = xp.pad(ifft2(1j * nm[0] * fft_phi_gc1_1) * (self.N ** 2), ((0, 1),), mode='wrap')
 		self.dphidy_gc1_1 = xp.pad(ifft2(1j * nm[1] * fft_phi_gc1_1) * (self.N ** 2), ((0, 1),), mode='wrap')
 		self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
@@ -83,16 +85,16 @@ class GC2Dt:
 
 	def eqn_phi(self, t, y):
 		yr = xp.array([y[:self.Ntraj], y[self.Ntraj:]]).transpose() % (2.0 * xp.pi)
-		dphidx = interpn((self.xv_, self.xv_), self.dphidx_gc1_1, yr)
-		dphidy = interpn((self.xv_, self.xv_), self.dphidy_gc1_1, yr)
+		dphidx = interpn(self.xy_, self.dphidx_gc1_1, yr)
+		dphidy = interpn(self.xy_, self.dphidy_gc1_1, yr)
 		dy_gc1 = xp.concatenate((- (dphidy * xp.exp(- 1j * t)).imag, (dphidx * xp.exp(- 1j * t)).imag), axis=None)
 		if self.gc_order == 1:
 			return dy_gc1
 		elif self.gc_order == 2:
-			dphidx_0 = interpn((self.xv_, self.xv_), self.dphidx_gc2_0, yr)
-			dphidy_0 = interpn((self.xv_, self.xv_), self.dphidy_gc2_0, yr)
-			dphidx_2 = interpn((self.xv_, self.xv_), self.dphidx_gc2_2, yr)
-			dphidy_2 = interpn((self.xv_, self.xv_), self.dphidy_gc2_2, yr)
+			dphidx_0 = interpn(self.xy_, self.dphidx_gc2_0, yr)
+			dphidy_0 = interpn(self.xy_, self.dphidy_gc2_0, yr)
+			dphidx_2 = interpn(self.xy_, self.dphidx_gc2_2, yr)
+			dphidy_2 = interpn(self.xy_, self.dphidy_gc2_2, yr)
 			dy_gc2 = xp.concatenate((- dphidy_0.real + (dphidy_2 * xp.exp(- 2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(- 2j * t)).real), axis=None)
 			return dy_gc1 + dy_gc2
 

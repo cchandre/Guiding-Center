@@ -23,26 +23,26 @@
 ########################################################################################################################
 import numpy as xp
 
-potential = 'KMdCN'
-method = 'diffusion'
+potential = 'turbulent'
+method = 'poincare'
 
 flr = ['all', 'all']
 gc_order = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0.0, 1.0, 5)
-A = 0.63
+iterable_values = xp.linspace(0.0, 1.0, 3)
+A = 0.6
 #rho = 0.7
 eta = 0.0
 
-Ntraj = 1000
-Tf = 500
-init = 'random'
-modulo = False
+Ntraj = 10
+Tf = 50
+init = 'fixed'
+modulo = True
 timestep = 0.03
-save_results = True
-plot_results = False
-parallelization = [True, 5]
+save_results = False
+plot_results = True
+parallelization = [False, 3]
 
 ########################################################################################################################
 dict_list = [{'potential': potential} for _ in range(len(iterable_values))]
