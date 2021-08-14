@@ -37,7 +37,7 @@ def run_method(case):
 		fig, axs = plt.subplots(1, case.gc_order+1)
 		ims = []
 		for t in trange:
-			im = [axs[0].imshow((data[0] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1].imshow((data[1] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm)]
+			im = [axs[i].imshow((data[i] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm) for i in range(2)]
 			if case.gc_order == 2:
 				im.append(axs[2].imshow((data[2] - data[3] * xp.exp(-2j * t)).real, origin='lower', extent=extent, animated=True, norm=divnorm))
 			for ax in axs:
