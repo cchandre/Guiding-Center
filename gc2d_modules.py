@@ -12,17 +12,20 @@ from datetime import date
 def run_method(case):
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
-	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
 	plt.rcParams.update({
 		'text.usetex': True,
 		'font.family': 'serif',
 		'font.sans-serif': ['Palatino'],
 		'font.size': 24,
-		'figure.figsize': [25, 8],
+		'axes.labelsize': 30,
+		'figure.figsize': [8, 8],
 		'image.cmap': 'bwr'})
+	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
 	if case.gc_order == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
 	if case.method == 'plot_potentials' and case.potential == 'turbulent':
+		start = time.time()
+		plt.rcParams.update({'figure.figsize': [8 * (case.gc_order +1), 8]})
 		data = xp.array([case.phi, case.phi_gc1_1, case.phi_gc2_0, case.phi_gc2_2])
 		save_data(case, 'potentials', data, filestr)
 		trange = xp.linspace(0, 2 * xp.pi, 50)
@@ -47,8 +50,9 @@ def run_method(case):
 				ax.set_yticks([0, 2, 4, 6])
 			ims.append(im)
 		fig.colorbar(im[case.gc_order], ax=axs.ravel().tolist())
-		ani = ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
-		ani.save(filestr + '.gif', writer=PillowWriter(fps=30))
+		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30))
+		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
+		print('\033[90m        Animation saved in {} \033[00m'.format(filestr + '.gif'))
 	elif case.method in ['poincare', 'diffusion']:
 		if case.init == 'random':
 			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
@@ -60,14 +64,21 @@ def run_method(case):
 		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.timestep, atol=1, rtol=1)
-		print('\033[92m    Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
+		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		if case.method == 'poincare':
 			if case.modulo:
 				sol.y = sol.y % (2.0 * xp.pi)
 			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
 			if case.plot_results:
-				plt.figure(figsize=(8, 8))
-				plt.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+				fig, ax = plt.subplots(1, 1)
+				ax.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+				ax.set_xlabel('$x$')
+				ax.set_ylabel('$y$')
+				if case.modulo:
+					ax.set_xlim(0.0, 2.0 * xp.pi)
+					ax.set_ylim(0.0, 2.0 * xp.pi)
+				fig.savefig(filestr + '.png', dpi=300)
+				print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
 				plt.pause(0.5)
 		if case.method == 'diffusion':
 			r2 = xp.zeros(case.Tf)
@@ -81,10 +92,6 @@ def run_method(case):
 			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
 			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-			if case.plot_results:
-				plt.figure(figsize=(8, 8))
-				plt.plot(t_eval, r2, 'b', linewidth=2)
-				plt.pause(0.5)
 
 
 def save_data(case, name, data, filestr, info=[]):
@@ -95,4 +102,4 @@ def save_data(case, name, data, filestr, info=[]):
 		mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
 		name_file = type(case).__name__ + '_' + name + '_' + filestr + '.mat'
 		savemat(name_file, mdic)
-		print('\033[92m    Results saved in {} \033[00m'.format(name_file))
+		print('\033[90m        Results saved in {} \033[00m'.format(name_file))
