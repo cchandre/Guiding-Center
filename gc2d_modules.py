@@ -1,5 +1,7 @@
 import numpy as xp
 import matplotlib.pyplot as plt
+from matplotlib.animation import ArtistAnimation, PillowWriter
+from matplotlib import colors
 from scipy.integrate import solve_ivp
 from scipy.stats import linregress
 from scipy.io import savemat
@@ -11,22 +13,42 @@ def run_method(case):
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
 	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
+	plt.rcParams.update({
+		'text.usetex': True,
+		'font.family': 'serif',
+		'font.sans-serif': ['Palatino'],
+		'font.size': 24,
+		'figure.figsize': [25, 8],
+		'image.cmap': 'bwr'})
 	if case.gc_order == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
-	if case.method == 'plot_potentials':
+	if case.method == 'plot_potentials' and case.potential == 'turbulent':
 		data = xp.array([case.phi, case.phi_gc1_1, case.phi_gc2_0, case.phi_gc2_2])
 		save_data(case, 'potentials', data, filestr)
-		if case.plot_results:
-			plt.figure(figsize=(8, 8))
-			plt.pcolor(case.xv, case.xv, case.phi.imag, shading='auto')
-			plt.colorbar()
-			plt.figure(figsize=(8, 8))
-			plt.pcolor(case.xv, case.xv, case.phi_gc1_1.imag, shading='auto')
-			plt.colorbar()
-			plt.figure(figsize=(8, 8))
-			plt.pcolor(case.xv, case.xv, case.phi_gc2_0 - case.phi_gc2_2.real, shading='auto')
-			plt.colorbar()
-			plt.pause(0.5)
+		trange = xp.linspace(0, 2 * xp.pi, 50)
+		min_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.min()
+		max_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.max()
+		min_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.min()
+		max_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.max()
+		vmin = min(min_phi, min_phi_gc1)
+		vmax = max(max_phi, max_phi_gc1)
+		extent = (0, 2 * xp.pi, 0, 2 * xp.pi)
+		divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0.0, vmax=vmax)
+		fig, axs = plt.subplots(1, case.gc_order+1)
+		ims = []
+		for t in trange:
+			im = [axs[0].imshow((data[0] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1].imshow((data[1] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm)]
+			if case.gc_order == 2:
+				im.append(axs[2].imshow((data[2] - data[3] * xp.exp(-2j * t)).real, origin='lower', extent=extent, animated=True, norm=divnorm))
+			for ax in axs:
+				ax.set_xlabel('$x$', fontsize=30)
+				ax.set_ylabel('$y$', fontsize=30)
+				ax.set_xticks([0, 2, 4, 6])
+				ax.set_yticks([0, 2, 4, 6])
+			ims.append(im)
+		fig.colorbar(im[case.gc_order], ax=axs.ravel().tolist())
+		ani = ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
+		ani.save(filestr + '.gif', writer=PillowWriter(fps=30))
 	elif case.method in ['poincare', 'diffusion']:
 		if case.init == 'random':
 			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
