@@ -2,32 +2,32 @@
 ##                                   Definition of the parameters for GC2D                                            ##
 ########################################################################################################################
 ##                                                                                                                    ##
-##   potential: string; 'KMdCN' or 'turbulent'                                                                        ##
-##   method: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'                                ##
-##   flr: array of length 2; 'none', 'all' or integer; FLR order for each GC order                                    ##
-##   gc_order: 1 or 2; GC order                                                                                       ##
+##   Potential: string; 'KMdCN' or 'turbulent'                                                                        ##
+##   Method: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'                                ##
+##   FLR: array of length 2; 'none', 'all' or integer; FLR order for each GC order                                    ##
+##   GCorder: 1 or 2; order in the guiding-center expansion                                                           ##
 ##   A: float; amplitude of the electrostatic potential                                                               ##
 ##   rho: float; value of the Larmor radius                                                                           ##
 ##   eta: float; amplitude of the GC order 2 potential                                                                ##
 ##   M: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent')                                     ##
-##   N: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)                                    ##
 ##   Ntraj: integer; number of trajectories to be integrated                                                          ##
 ##   Tf: integer; number of periods for the integration of the trajectories                                           ##
 ##   init: boolean; 'random' or 'fixed'                                                                               ##
-##   modulo: boolean; only for method='poincare'; if True, x and y are taken modulo 2*pi                              ##
-##   timestep: float; time step used by the integrator                                                                ##
-##   save_results: boolean; if True, the results are saved in a .mat file                                             ##
-##   plot_results: boolean; if True, the results are plotted right after the computation                              ##
-##   parallelization: 2d array [boolean, int]; True for parallelization, int is the number of processors to be used   ##
+##   modulo: boolean; only for Method='poincare'; if True, x and y are taken modulo 2*pi                              ##
+##   N: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)                                    ##
+##   TimeStep: float; time step used by the integrator                                                                ##
+##   SaveData: boolean; if True, the results are saved in a .mat file                                                 ##
+##   PlotResults: boolean; if True, the results are plotted right after the computation                               ##
+##   Parallelization: 2d array [boolean, int]; True for parallelization, int is the number of processors to be used   ##
 ##                                                                                                                    ##
 ########################################################################################################################
 import numpy as xp
 
-potential = 'turbulent'
-method = 'poincare'
+Potential = 'turbulent'
+Method = 'plot_potentials'
 
-flr = ['all', 'all']
-gc_order = 1
+FLR = ['all', 'all']
+GCorder = 1
 
 iterable_name = 'rho'
 iterable_values = xp.linspace(0.0, 1.0, 3)
@@ -39,25 +39,27 @@ Ntraj = 100
 Tf = 500
 init = 'fixed'
 modulo = True
-timestep = 0.03
-save_results = False
-plot_results = True
-parallelization = [True, 3]
+TimeStep = 0.03
+SaveData = False
+PlotResults = True
+Parallelization = [False, 3]
 
 ########################################################################################################################
-dict_list = [{'potential': potential} for _ in range(len(iterable_values))]
+##                                                DO NOT EDIT BELOW                                                   ##
+########################################################################################################################
+dict_list = [{'Potential': Potential} for _ in range(len(iterable_values))]
 for it in range(len(iterable_values)):
 	dict_list[it].update({iterable_name: iterable_values[it]})
 
-if flr[0] == 'none' and flr[1] == 'none':
+if FLR[0] == 'none' and FLR[1] == 'none':
 	rho = 0
-if gc_order == 1:
+if GCorder == 1:
 	eta = 0
 
 for dict in dict_list:
-	if potential == 'KMdCN':
+	if Potential == 'KMdCN':
 		dict.update({'M': 5})
-	elif potential == 'turbulent':
+	elif Potential == 'turbulent':
 		dict.update({
 			'M': 25,
 			'N': 2 ** 10})
@@ -68,14 +70,14 @@ for dict in dict_list:
 	if not 'eta' in dict:
 		dict.update({'eta': eta})
 	dict.update({
-    	'flr': flr,
-    	'gc_order': gc_order,
-		'method': method,
+    	'FLR': FLR,
+    	'GCorder': GCorder,
+		'Method': Method,
     	'modulo': modulo,
     	'Ntraj': Ntraj,
 	    'Tf': Tf,
 		'init': init,
-    	'timestep': timestep,
-    	'save_results': save_results,
-    	'plot_results': plot_results})
+    	'TimeStep': TimeStep,
+    	'SaveData': SaveData,
+    	'PlotResults': PlotResults})
 ########################################################################################################################
