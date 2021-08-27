@@ -1,12 +1,12 @@
 # Guiding-Center (GC) theory in plasma physics
 
-- **gc2d_dict.py**: to be edited to change the parameters of the GC computation (see below for a dictionary of parameters)
+- `gc2d_dict.py`: to be edited to change the parameters of the GC computation (see below for a dictionary of parameters)
 
-- **gc2d.py**: contains the GC classes and main functions defining the GC dynamics
+- `gc2d.py`: contains the GC classes and main functions defining the GC dynamics
 
-- **gc2d_modules**: contains the methods to integrate the GC dynamics
+- `gc2d_modules.py`: contains the methods to integrate the GC dynamics
 
-Once **gc2d_dict.py** has been edited with the relevant parameters, run the file as 
+Once `gc2d_dict.py` has been edited with the relevant parameters, run the file as 
 > `python3.8 gc2d.py`
 
 ___
