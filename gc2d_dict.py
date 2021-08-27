@@ -75,9 +75,9 @@ for dict in dict_list:
 		'Method': Method,
     	'modulo': modulo,
     	'Ntraj': Ntraj,
-	    'Tf': Tf,
+		'Tf': Tf,
 		'init': init,
-    	'TimeStep': TimeStep,
-    	'SaveData': SaveData,
-    	'PlotResults': PlotResults})
+		'TimeStep': TimeStep,
+		'SaveData': SaveData,
+		'PlotResults': PlotResults})
 ########################################################################################################################
