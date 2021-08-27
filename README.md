@@ -1,4 +1,4 @@
-# Guiding-Center theory in plasma physics
+# Guiding-Center (GC) theory in plasma physics
 
 - **gc2d_dict.py**: to be edited to change the parameters of the GC computation (see below for a dictionary of parameters)
 
@@ -15,7 +15,7 @@ ___
 - *Potential*: string; 'KMdCN' or 'turbulent' 
 - *Method*: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'
 - *FLR*: array of length 2; 'none', 'all' or integer; FLR order for each GC order
-- *GCorder*: 1 or 2; GC order 
+- *GCorder*: 1 or 2; order in the guiding-center expansion 
 - *A*: float; amplitude of the electrostatic potential 
 - *rho*: float; value of the Larmor radius 
 - *eta*: float; amplitude of the GC order 2 potential
