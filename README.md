@@ -6,7 +6,7 @@
 
 - **gc2d_modules**: contains the methods to integrate the GC dynamics
 
-Once gc2d_dict.py has been edited with the relevant parameters, run the file as 
+Once **gc2d_dict.py** has been edited with the relevant parameters, run the file as 
 > `python3.8 gc2d.py`
 
 ___
