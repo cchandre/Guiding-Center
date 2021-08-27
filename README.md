@@ -17,14 +17,14 @@ ___
 - *FLR*: array of length 2; 'none', 'all' or integer; FLR order for each GC order
 - *GCorder*: 1 or 2; GC order 
 - *A*: float; amplitude of the electrostatic potential 
-- *Rho*: float; value of the Larmor radius 
-- *Eta*: float; amplitude of the GC order 2 potential
+- *rho*: float; value of the Larmor radius 
+- *eta*: float; amplitude of the GC order 2 potential
 - *M*: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent')
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2 ** 10) 
 - *Ntraj*: integer; number of trajectories to be integrated
 - *Tf*: integer; number of periods for the integration of the trajectories
-- *Init*: boolean; 'random' or 'fixed'; method to generate initial conditions  
-- *Modulo*: boolean; only for method='poincare'; if True, *x* and *y* are taken modulo 2 x pi
+- *init*: boolean; 'random' or 'fixed'; method to generate initial conditions  
+- *modulo*: boolean; only for method='poincare'; if True, *x* and *y* are taken modulo 2 x pi
 - *TimeStep*: float; time step used by the integrator
 - *SaveData*: boolean; if True, the results are saved in a `.mat` file
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
