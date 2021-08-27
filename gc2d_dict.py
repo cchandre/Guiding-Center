@@ -70,11 +70,11 @@ for dict in dict_list:
 	if not 'eta' in dict:
 		dict.update({'eta': eta})
 	dict.update({
-    	'FLR': FLR,
-    	'GCorder': GCorder,
+		'FLR': FLR,
+		'GCorder': GCorder,
 		'Method': Method,
-    	'modulo': modulo,
-    	'Ntraj': Ntraj,
+		'modulo': modulo,
+		'Ntraj': Ntraj,
 		'Tf': Tf,
 		'init': init,
 		'TimeStep': TimeStep,
