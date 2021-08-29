@@ -18,7 +18,7 @@
 ##   TimeStep: float; time step used by the integrator                                                                ##
 ##   SaveData: boolean; if True, the results are saved in a .mat file                                                 ##
 ##   PlotResults: boolean; if True, the results are plotted right after the computation                               ##
-##   Parallelization: 2d array [boolean, int]; True for parallelization, int is the number of processors to be used   ##
+##   Parallelization: 2d array [boolean, int]; True for parallelization, int is the number of cores to be used        ##
 ##                                                                                                                    ##
 ########################################################################################################################
 import numpy as xp
@@ -27,13 +27,13 @@ Potential = 'turbulent'
 Method = 'plot_potentials'
 
 FLR = ['all', 'all']
-GCorder = 1
+GCorder = 2
 
 iterable_name = 'rho'
 iterable_values = xp.linspace(0.0, 1.0, 3)
 A = 0.6
 #rho = 0.7
-eta = 0.0
+eta = 0.1
 
 Ntraj = 100
 Tf = 500
@@ -42,7 +42,7 @@ modulo = True
 TimeStep = 0.03
 SaveData = False
 PlotResults = True
-Parallelization = [False, 3]
+Parallelization = [True, 3]
 
 ########################################################################################################################
 ##                                                DO NOT EDIT BELOW                                                   ##

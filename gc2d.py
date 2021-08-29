@@ -8,14 +8,12 @@ from gc2d_modules import run_method
 from gc2d_dict import dict_list, Parallelization
 import multiprocess
 
-
 def run_case(dict):
 	if dict['Potential'] == 'KMdCN':
 		case = GC2Dk(dict)
 	elif dict['Potential'] == 'turbulent':
 		case = GC2Dt(dict)
 	run_method(case)
-
 
 def main():
 	if Parallelization[0]:
@@ -29,7 +27,6 @@ def main():
 		for dict in dict_list:
 			run_case(dict)
 	plt.show()
-
 
 class GC2Dt:
 	def __repr__(self):
@@ -98,7 +95,6 @@ class GC2Dt:
 			dy_gc2 = xp.concatenate((- dphidy_0.real + (dphidy_2 * xp.exp(- 2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(- 2j * t)).real), axis=None)
 			return dy_gc1 + dy_gc2
 
-
 class GC2Dk:
 	def __repr__(self):
 		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
@@ -150,7 +146,6 @@ class GC2Dk:
 			v2p2 = self.A22 * (beta_b ** 2) * xp.sin(2.0 * (y[:self.Ntraj] + y[self.Ntraj:]))
 			dy_gc2 = 2.0 * xp.array([v20[self.Ntraj:] + v2p2 - v2m2, - v20[:self.Ntraj] - v2p2 - v2m2])
 			return (dy_gc1 + dy_gc2).reshape(2 * self.Ntraj)
-
 
 if __name__ == "__main__":
 	main()
