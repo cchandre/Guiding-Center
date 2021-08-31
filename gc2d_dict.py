@@ -18,7 +18,7 @@
 ##   TimeStep: float; time step used by the integrator                                                                ##
 ##   SaveData: boolean; if True, the results are saved in a .mat file                                                 ##
 ##   PlotResults: boolean; if True, the results are plotted right after the computation                               ##
-##   Parallelization: 2d array [boolean, int]; True for parallelization, int is the number of cores to be used        ##
+##   Parallelization: tuple (boolean, int); True for parallelization, int is the number of cores to be used           ##
 ##                                                                                                                    ##
 ########################################################################################################################
 import numpy as xp
@@ -42,7 +42,7 @@ modulo = True
 TimeStep = 0.03
 SaveData = False
 PlotResults = True
-Parallelization = [True, 3]
+Parallelization = (True, 3)
 
 ########################################################################################################################
 ##                                                DO NOT EDIT BELOW                                                   ##

@@ -8,18 +8,18 @@ from scipy.io import savemat
 import time
 from datetime import date
 
+plt.rcParams.update({
+	'text.usetex': True,
+	'font.family': 'serif',
+	'font.sans-serif': ['Palatino'],
+	'font.size': 24,
+	'axes.labelsize': 30,
+	'figure.figsize': [8, 8],
+	'image.cmap': 'bwr'})
 
 def run_method(case):
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
-	plt.rcParams.update({
-		'text.usetex': True,
-		'font.family': 'serif',
-		'font.sans-serif': ['Palatino'],
-		'font.size': 24,
-		'axes.labelsize': 30,
-		'figure.figsize': [8, 8],
-		'image.cmap': 'bwr'})
 	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
 	if case.GCorder == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
@@ -28,18 +28,17 @@ def run_method(case):
 		plt.rcParams.update({'figure.figsize': [8 * (case.GCorder +1), 8]})
 		data = xp.array([case.phi, case.phi_gc1_1, case.phi_gc2_0, case.phi_gc2_2])
 		save_data(case, 'potentials', data, filestr)
-		trange = xp.linspace(0, 2 * xp.pi, 50)
-		min_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.min()
-		max_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.max()
-		min_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.min()
-		max_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * trange[xp.newaxis, xp.newaxis, :])).imag.max()
-		vmin = min(min_phi, min_phi_gc1)
-		vmax = max(max_phi, max_phi_gc1)
+		time_range = xp.linspace(0, 2 * xp.pi, 50)
+		min_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.min()
+		max_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.max()
+		min_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.min()
+		max_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.max()
+		vmin, vmax = min(min_phi, min_phi_gc1), max(max_phi, max_phi_gc1)
 		extent = (0, 2 * xp.pi, 0, 2 * xp.pi)
 		divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0.0, vmax=vmax)
 		fig, axs = plt.subplots(1, case.GCorder+1)
 		ims = []
-		for t in trange:
+		for t in time_range:
 			im = [axs[i].imshow((data[i] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm) for i in range(2)]
 			if case.GCorder == 2:
 				im.append(axs[2].imshow((data[2] - data[3] * xp.exp(-2j * t)).real, origin='lower', extent=extent, animated=True, norm=divnorm))
