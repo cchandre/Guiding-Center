@@ -27,13 +27,13 @@ ___
 - *Ntraj*: integer; number of trajectories to be integrated
 - *Tf*: integer; number of periods for the integration of the trajectories
 - *init*: boolean; 'random' or 'fixed'; method to generate initial conditions  
-- *modulo*: boolean; only for method='poincare'; if True, *x* and *y* are taken modulo 2 x pi
+- *modulo*: boolean; only for Method='poincare'; if True, *x* and *y* are taken modulo 2 x pi
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)
 - *TimeStep*: float; time step used by the integrator
 ####
 - *SaveData*: boolean; if True, the results are saved in a `.mat` file
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
-- *Parallelization*: 2d array [boolean, int]; True for parallelization, int is the number of cores to be used or int='all' to use all available cores
+- *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 
 ---
 For more information: <cristel.chandre@univ-amu.fr>
