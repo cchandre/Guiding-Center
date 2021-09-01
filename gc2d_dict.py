@@ -1,32 +1,13 @@
 ########################################################################################################################
-##                                   Definition of the parameters for GC2D                                            ##
+##                   Dictionary of parameters: https://github.com/cchandre/Guiding-Center                             ##
 ########################################################################################################################
-##                                                                                                                    ##
-##   Potential: string; 'KMdCN' or 'turbulent'                                                                        ##
-##   Method: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'                                ##
-##   FLR: array of length 2; 'none', 'all' or integer; FLR order for each GC order                                    ##
-##   GCorder: 1 or 2; order in the guiding-center expansion                                                           ##
-##   A: float; amplitude of the electrostatic potential                                                               ##
-##   rho: float; value of the Larmor radius                                                                           ##
-##   eta: float; amplitude of the GC order 2 potential                                                                ##
-##   M: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent')                                     ##
-##   Ntraj: integer; number of trajectories to be integrated                                                          ##
-##   Tf: integer; number of periods for the integration of the trajectories                                           ##
-##   init: boolean; 'random' or 'fixed'                                                                               ##
-##   modulo: boolean; only for Method='poincare'; if True, x and y are taken modulo 2*pi                              ##
-##   N: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)                                    ##
-##   TimeStep: float; time step used by the integrator                                                                ##
-##   SaveData: boolean; if True, the results are saved in a .mat file                                                 ##
-##   PlotResults: boolean; if True, the results are plotted right after the computation                               ##
-##   Parallelization: tuple (boolean, int); True for parallelization, int is the number of cores to be used           ##
-##                                                                                                                    ##
-########################################################################################################################
+
 import numpy as xp
 
 Potential = 'turbulent'
 Method = 'plot_potentials'
 
-FLR = ['all', 'all']
+FLR = ('all', 'all')
 GCorder = 2
 
 iterable_name = 'rho'
