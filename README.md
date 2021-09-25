@@ -8,7 +8,7 @@
 
 Once [`gc2d_dict.py`](https://github.com/cchandre/Guiding-Center/blob/main/gc2d_dict.py) has been edited with the relevant parameters, run the file as 
 ```sh
-python3.8 gc2d.py
+python3 gc2d.py
 ```
 
 ___
