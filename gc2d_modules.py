@@ -96,7 +96,6 @@ def run_method(case):
 def save_data(case, name, data, filestr, info=[]):
 	if case.SaveData:
 		mdic = case.DictParams.copy()
-		del mdic['Precision']
 		mdic.update({'data': data, 'info': info})
 		date_today = date.today().strftime(" %B %d, %Y\n")
 		mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})

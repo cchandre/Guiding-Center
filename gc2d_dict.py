@@ -21,7 +21,7 @@ Tf = 500
 init = 'fixed'
 modulo = True
 TimeStep = 0.03
-SaveData = False
+SaveData = True
 PlotResults = True
 Parallelization = (True, 3)
 
