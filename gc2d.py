@@ -6,7 +6,7 @@ from scipy.special import jv, eval_chebyu
 import sympy as sp
 from gc2d_modules import run_method
 from gc2d_dict import dict_list, Parallelization
-import multiprocess
+import multiprocessing
 
 def run_case(dict):
 	if dict['Potential'] == 'KMdCN':
@@ -18,10 +18,10 @@ def run_case(dict):
 def main():
 	if Parallelization[0]:
 		if Parallelization[1] == 'all':
-			num_cores = multiprocess.cpu_count()
+			num_cores = multiprocessing.cpu_count()
 		else:
-			num_cores = min(multiprocess.cpu_count(), Parallelization[1])
-		pool = multiprocess.Pool(num_cores)
+			num_cores = min(multiprocessing.cpu_count(), Parallelization[1])
+		pool = multiprocessing.Pool(num_cores)
 		pool.map(run_case, dict_list)
 	else:
 		for dict in dict_list:
