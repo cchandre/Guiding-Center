@@ -14,12 +14,13 @@ iterable_name = 'rho'
 iterable_values = xp.linspace(0.0, 1.0, 3)
 A = 0.6
 #rho = 0.7
-eta = 0.1
+eta = 0.3
 
 Ntraj = 100
 Tf = 500
 init = 'fixed'
-modulo = True
+modulo = False
+grid = False
 TimeStep = 0.03
 SaveData = True
 PlotResults = True
@@ -55,6 +56,7 @@ for dict in dict_list:
 		'GCorder': GCorder,
 		'Method': Method,
 		'modulo': modulo,
+		'grid': grid,
 		'Ntraj': Ntraj,
 		'Tf': Tf,
 		'init': init,

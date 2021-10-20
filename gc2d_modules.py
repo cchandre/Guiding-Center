@@ -2,6 +2,7 @@ import numpy as xp
 import matplotlib.pyplot as plt
 from matplotlib.animation import ArtistAnimation, PillowWriter
 from matplotlib import colors
+from matplotlib.patches import Rectangle
 from scipy.integrate import solve_ivp
 from scipy.stats import linregress
 from scipy.io import savemat
@@ -45,8 +46,15 @@ def run_method(case):
 			for ax in axs:
 				ax.set_xlabel('$x$', fontsize=30)
 				ax.set_ylabel('$y$', fontsize=30)
-				ax.set_xticks([0, 2, 4, 6])
-				ax.set_yticks([0, 2, 4, 6])
+				ax.set_xticks([0, xp.pi, 2*xp.pi])
+				ax.set_yticks([0, xp.pi, 2*xp.pi])
+				ax.grid(case.grid)
+				ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
+				ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
+			axs[0].set_title(r'$\phi$', fontsize=30)
+			axs[1].set_title(r'$\langle \phi \rangle$', fontsize=30)
+			if case.GCorder == 2:
+				axs[2].set_title(r'$-\frac{\eta}{\rho}\frac{\partial}{\partial \rho} \left(\langle \phi^2\rangle -\langle \phi\rangle^2 \right)$', fontsize=30)
 			ims.append(im)
 		fig.colorbar(im[case.GCorder], ax=axs.ravel().tolist())
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30))
@@ -76,6 +84,15 @@ def run_method(case):
 				if case.modulo:
 					ax.set_xlim(0.0, 2.0 * xp.pi)
 					ax.set_ylim(0.0, 2.0 * xp.pi)
+					ax.set_xticks([0, xp.pi, 2*xp.pi])
+					ax.set_yticks([0, xp.pi, 2*xp.pi])
+					ax.grid(case.grid)
+					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
+					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
+				if not case.modulo:
+					ax.add_patch(Rectangle((0, 0), 2*xp.pi, 2*xp.pi, facecolor='None', edgecolor='r', lw=2))
+					ax.grid(case.grid)
+					ax.set_aspect('equal')
 				fig.savefig(filestr + '.png', dpi=300)
 				print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
 				plt.pause(0.5)
