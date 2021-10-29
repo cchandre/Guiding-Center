@@ -36,4 +36,4 @@ ___
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 
 ---
-For more information: <cristel.chandre@univ-amu.fr>
+For more information: <cristel.chandre@cnrs.fr>
