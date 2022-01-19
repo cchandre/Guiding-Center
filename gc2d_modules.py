@@ -126,7 +126,7 @@ def run_method(case):
 		if case.Method == 'diffusion':
 			r2 = xp.zeros(case.Tf)
 			for t in range(case.Tf):
-				r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t])**2).sum() / (case.Ntraj * (case.Tf - t))
+				r2[t] = (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t])**2).sum() / (case.Ntraj * (case.Tf - t))
 			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
 			max_y = xp.sqrt((xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1))**2\
 				+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1))**2).max(axis=1))
