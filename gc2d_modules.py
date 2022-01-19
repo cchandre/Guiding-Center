@@ -128,9 +128,9 @@ def run_method(case):
 			for t in range(case.Tf):
 				r2[t] += (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t])**2).sum() / (case.Ntraj * (case.Tf - t))
 			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-			max_y = (xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1))**2\
-				+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1))**2).max(axis=1)
-			trapped = (max_y <= 3.0 * xp.pi).sum()
+			max_y = xp.sqrt((xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1))**2\
+				+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1))**2).max(axis=1))
+			trapped = (max_y <= xp.pi).sum()
 			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
 			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
