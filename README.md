@@ -36,5 +36,11 @@ ___
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 
+- *darkmode*: boolean; if True, plots are done in dark mode
+
 ---
 For more information: <cristel.chandre@cnrs.fr>
+
+<p align="center">
+  <img src="https://github.com/cchandre/Guiding-Center/blob/main/A060_RHO040.gif" alt="Example" width="600"/>
+</p>
