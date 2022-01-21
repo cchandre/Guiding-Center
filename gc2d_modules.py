@@ -36,15 +36,18 @@ from scipy.io import savemat
 import time
 from datetime import date
 
-plt.rc('figure', figsize=[8,8], titlesize=30)
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif', size=24)
-plt.rc('axes', labelsize=30)
-plt.rc('image', cmap='bwr')
-
-cs = ['b', 'm']
-
 def run_method(case):
+	if case.darkmode:
+		cs = ['k', 'w', 'c', 'r']
+	else:
+		cs = ['w', 'k', 'r', 'b']
+	plt.rc('figure', facecolor=cs[0], titlesize=30, figsize=[8,8])
+	plt.rc('text', usetex=True, color=cs[1])
+	plt.rc('font', family='serif', size=24)
+	plt.rc('axes', facecolor=cs[0], edgecolor=cs[1], labelsize=30, labelcolor=cs[1], titlecolor=cs[1])
+	plt.rc('xtick', color=cs[1], labelcolor=cs[1])
+	plt.rc('ytick', color=cs[1], labelcolor=cs[1])
+	plt.rc('image', cmap='bwr')
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
 	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
@@ -106,8 +109,8 @@ def run_method(case):
 				x = x % (2 * xp.pi) * case.modulo
 				y = y % (2 * xp.pi) * case.modulo
 				fig, ax = plt.subplots(1, 1)
-				ax.plot(x[untrapped, :], y[untrapped, :], '.', color=cs[0], markersize=2)
-				ax.plot(x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :], '.', color=cs[1], markersize=2)
+				ax.plot(x[untrapped, :], y[untrapped, :], '.', color=cs[2], markersize=2)
+				ax.plot(x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :], '.', color=cs[3], markersize=2)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				if case.modulo:

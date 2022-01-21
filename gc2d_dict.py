@@ -5,19 +5,19 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'plot_potentials'
+Method = 'poincare'
 
 FLR = ('all', 'all')
 GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0.4, 0.4, 1)
+iterable_values = xp.linspace(0.1, 0.1, 1)
 A = 0.6
 #rho = 0.7
 eta = 0.0
 
 Ntraj = 100
-Tf = 500
+Tf = 200
 init = 'random'
 modulo = True
 threshold = xp.pi
@@ -26,6 +26,8 @@ TimeStep = 0.03
 SaveData = False
 PlotResults = True
 Parallelization = (False, 3)
+
+darkmode = True
 
 ###################################################################################################
 ##                             DO NOT EDIT BELOW                                                 ##
@@ -64,5 +66,6 @@ for dict in dict_list:
 		'init': init,
 		'TimeStep': TimeStep,
 		'SaveData': SaveData,
-		'PlotResults': PlotResults})
+		'PlotResults': PlotResults,
+		'darkmode': darkmode})
 ###################################################################################################
