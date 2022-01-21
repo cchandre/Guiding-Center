@@ -5,13 +5,13 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare'
+Method = 'plot_potentials'
 
-FLR = ('none', 'all')
+FLR = ('all', 'all')
 GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0, 0, 1)
+iterable_values = xp.linspace(0.4, 0.4, 1)
 A = 0.6
 #rho = 0.7
 eta = 0.0
