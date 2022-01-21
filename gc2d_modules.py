@@ -38,9 +38,9 @@ from datetime import date
 
 def run_method(case):
 	if case.darkmode:
-		cs = ['k', 'w', 'c', 'r']
+		cs = ['k', 'w', 'c', 'm']
 	else:
-		cs = ['w', 'k', 'r', 'b']
+		cs = ['w', 'k', 'b', 'm']
 	plt.rc('figure', facecolor=cs[0], titlesize=30, figsize=[8,8])
 	plt.rc('text', usetex=True, color=cs[1])
 	plt.rc('font', family='serif', size=24)
