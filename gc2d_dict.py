@@ -5,26 +5,27 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'plot_potentials'
+Method = 'diffusion'
 
-FLR = ('all', 'all')
-GCorder = 2
+FLR = ('none', 'all')
+GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0.0, 1.0, 3)
+iterable_values = xp.linspace(0, 0, 1)
 A = 0.6
 #rho = 0.7
-eta = 0.3
+eta = 0.0
 
 Ntraj = 100
 Tf = 500
-init = 'fixed'
-modulo = False
+init = 'random'
+modulo = True
+threshold = xp.pi
 grid = False
 TimeStep = 0.03
-SaveData = True
+SaveData = False
 PlotResults = True
-Parallelization = (True, 3)
+Parallelization = (False, 3)
 
 ########################################################################################################################
 ##                                                DO NOT EDIT BELOW                                                   ##
@@ -56,6 +57,7 @@ for dict in dict_list:
 		'GCorder': GCorder,
 		'Method': Method,
 		'modulo': modulo,
+		'threshold': threshold,
 		'grid': grid,
 		'Ntraj': Ntraj,
 		'Tf': Tf,

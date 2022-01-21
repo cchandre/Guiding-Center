@@ -99,13 +99,16 @@ def run_method(case):
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
+		x, y = xp.split(sol.y, 2)
+		untrapped = compute_untrapped((x, y), thresh=case.threshold)
 		if case.Method == 'poincare':
-			if case.modulo:
-				sol.y = sol.y % (2.0 * xp.pi)
 			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
 			if case.PlotResults:
+				x = x % (2.0 * xp.pi) * case.modulo
+				y = y % (2.0 * xp.pi) * case.modulo
 				fig, ax = plt.subplots(1, 1)
-				ax.plot(sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :], 'b.', markersize=2)
+				ax.plot(x[untrapped, :], y[untrapped, :], 'b.', markersize=2)
+				ax.plot(x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :], 'm.', markersize=2)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				if case.modulo:
@@ -120,22 +123,26 @@ def run_method(case):
 					ax.add_patch(Rectangle((0, 0), 2*xp.pi, 2*xp.pi, facecolor='None', edgecolor='r', lw=2))
 					ax.grid(case.grid)
 					ax.set_aspect('equal')
-				fig.savefig(filestr + '.png', dpi=300)
-				print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
+				if case.SaveData:
+					fig.savefig(filestr + '.png', dpi=300)
+					print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
 				plt.pause(0.5)
 		if case.Method == 'diffusion':
+			if untrapped.sum() <= 5:
+				print('\033[33m          Warning: not enough untrapped trajectories ({})'.format(untrapped.sum()))
 			r2 = xp.zeros(case.Tf)
 			for t in range(case.Tf):
-				r2[t] = (xp.abs(sol.y[:, t:] - sol.y[:, :case.Tf-t])**2).sum() / (case.Ntraj * (case.Tf - t))
+				r2[t] = ((x[untrapped, t:] - x[untrapped, :case.Tf-t])**2 + (y[untrapped, t:] - y[untrapped, :case.Tf-t])**2).sum() / (untrapped.sum() * (case.Tf - t))
 			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-			max_y = xp.sqrt((xp.abs(sol.y[:case.Ntraj, :] - sol.y[:case.Ntraj, 0].reshape(case.Ntraj,1))**2\
-				+ xp.abs(sol.y[case.Ntraj:, :] - sol.y[case.Ntraj:, 0].reshape(case.Ntraj,1))**2).max(axis=1))
-			trapped = (max_y <= xp.pi).sum()
+			trapped = xp.logical_not(untrapped).sum()
 			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
 			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
 			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
 
+def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
+	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
+	return xp.where(vec==True, output[0], output[1])
 
 def save_data(case, name, data, filestr, info=[]):
 	if case.SaveData:
