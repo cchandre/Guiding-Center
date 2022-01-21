@@ -36,14 +36,13 @@ from scipy.io import savemat
 import time
 from datetime import date
 
-plt.rcParams.update({
-	'text.usetex': True,
-	'font.family': 'serif',
-	'font.sans-serif': ['Palatino'],
-	'font.size': 24,
-	'axes.labelsize': 30,
-	'figure.figsize': [8, 8],
-	'image.cmap': 'bwr'})
+plt.rc('figure', figsize=[8,8], titlesize=30)
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', size=24)
+plt.rc('axes', labelsize=30)
+plt.rc('image', cmap='bwr')
+
+cs = ['b', 'm']
 
 def run_method(case):
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
@@ -63,7 +62,7 @@ def run_method(case):
 		max_phi_gc1 = (case.phi_gc1_1[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.max()
 		vmin, vmax = min(min_phi, min_phi_gc1), max(max_phi, max_phi_gc1)
 		extent = (0, 2 * xp.pi, 0, 2 * xp.pi)
-		divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0.0, vmax=vmax)
+		divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
 		fig, axs = plt.subplots(1, case.GCorder+1)
 		ims = []
 		for t in time_range:
@@ -71,17 +70,17 @@ def run_method(case):
 			if case.GCorder == 2:
 				im.append(axs[2].imshow((data[2] - data[3] * xp.exp(-2j * t)).real, origin='lower', extent=extent, animated=True, norm=divnorm))
 			for ax in axs:
-				ax.set_xlabel('$x$', fontsize=30)
-				ax.set_ylabel('$y$', fontsize=30)
-				ax.set_xticks([0, xp.pi, 2*xp.pi])
-				ax.set_yticks([0, xp.pi, 2*xp.pi])
+				ax.set_xlabel('$x$')
+				ax.set_ylabel('$y$')
+				ax.set_xticks([0, xp.pi, 2 * xp.pi])
+				ax.set_yticks([0, xp.pi, 2 * xp.pi])
 				ax.grid(case.grid)
 				ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 				ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
-			axs[0].set_title(r'$\phi$', fontsize=30)
-			axs[1].set_title(r'$\langle \phi \rangle$', fontsize=30)
+			axs[0].set_title(r'$\phi$')
+			axs[1].set_title(r'$\langle \phi \rangle$')
 			if case.GCorder == 2:
-				axs[2].set_title(r'$-\frac{\eta}{\rho}\frac{\partial}{\partial \rho} \left(\langle \phi^2\rangle -\langle \phi\rangle^2 \right)$', fontsize=30)
+				axs[2].set_title(r'$-\frac{\eta}{\rho}\frac{\partial}{\partial \rho} \left(\langle \phi^2\rangle -\langle \phi\rangle^2 \right)$')
 			ims.append(im)
 		fig.colorbar(im[case.GCorder], ax=axs.ravel().tolist())
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30))
@@ -89,13 +88,13 @@ def run_method(case):
 		print('\033[90m        Animation saved in {} \033[00m'.format(filestr + '.gif'))
 	elif case.Method in ['poincare', 'diffusion']:
 		if case.init == 'random':
-			y0 = 2.0 * xp.pi * xp.random.rand(2 * case.Ntraj)
+			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
-			y_vec = xp.linspace(0.0, 2.0 * xp.pi, int(xp.sqrt(case.Ntraj)), endpoint=False)
+			y_vec = xp.linspace(0, 2 * xp.pi, int(xp.sqrt(case.Ntraj)), endpoint=False)
 			y_mat = xp.meshgrid(y_vec, y_vec)
 			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
-		t_eval = 2.0 * xp.pi * xp.arange(0, case.Tf)
+		t_eval = 2 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
 		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
@@ -104,23 +103,23 @@ def run_method(case):
 		if case.Method == 'poincare':
 			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
 			if case.PlotResults:
-				x = x % (2.0 * xp.pi) * case.modulo
-				y = y % (2.0 * xp.pi) * case.modulo
+				x = x % (2 * xp.pi) * case.modulo
+				y = y % (2 * xp.pi) * case.modulo
 				fig, ax = plt.subplots(1, 1)
-				ax.plot(x[untrapped, :], y[untrapped, :], 'b.', markersize=2)
-				ax.plot(x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :], 'm.', markersize=2)
+				ax.plot(x[untrapped, :], y[untrapped, :], '.', color=cs[0], markersize=2)
+				ax.plot(x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :], '.', color=cs[1], markersize=2)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				if case.modulo:
-					ax.set_xlim(0.0, 2.0 * xp.pi)
-					ax.set_ylim(0.0, 2.0 * xp.pi)
-					ax.set_xticks([0, xp.pi, 2*xp.pi])
-					ax.set_yticks([0, xp.pi, 2*xp.pi])
+					ax.set_xlim(0, 2 * xp.pi)
+					ax.set_ylim(0, 2 * xp.pi)
+					ax.set_xticks([0, xp.pi, 2 * xp.pi])
+					ax.set_yticks([0, xp.pi, 2 * xp.pi])
 					ax.grid(case.grid)
 					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
 				if not case.modulo:
-					ax.add_patch(Rectangle((0, 0), 2*xp.pi, 2*xp.pi, facecolor='None', edgecolor='r', lw=2))
+					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='r', lw=2))
 					ax.grid(case.grid)
 					ax.set_aspect('equal')
 				if case.SaveData:
