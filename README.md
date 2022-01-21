@@ -1,4 +1,4 @@
-# Guiding-Center (GC) theory in plasma physics
+# Guiding-Center (GC) dynamics in plasma physics
 
 - [`gc2d_dict.py`](https://github.com/cchandre/Guiding-Center/blob/main/gc2d_dict.py): to be edited to change the parameters of the GC computation (see below for a dictionary of parameters)
 
