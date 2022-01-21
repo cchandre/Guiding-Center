@@ -38,3 +38,7 @@ ___
 
 ---
 For more information: <cristel.chandre@cnrs.fr>
+
+<p align="center">
+  <img src="https://github.com/cchandre/Guiding-Center/blob/main/A060_RHO040.gif" alt="Example" width="600"/>
+</p>
