@@ -149,7 +149,7 @@ def save_data(case, name, data, filestr, info=[]):
 		mdic = case.DictParams.copy()
 		mdic.update({'data': data, 'info': info})
 		date_today = date.today().strftime(" %B %d, %Y\n")
-		mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
+		mdic.update({'date': date_today, 'author': 'cristel.chandre@cnrs.fr'})
 		name_file = type(case).__name__ + '_' + name + '_' + filestr + '.mat'
 		savemat(name_file, mdic)
 		print('\033[90m        Results saved in {} \033[00m'.format(name_file))
