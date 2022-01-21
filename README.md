@@ -27,11 +27,12 @@ ___
 - *Ntraj*: integer; number of trajectories to be integrated
 - *Tf*: integer; number of periods for the integration of the trajectories
 - *init*: boolean; 'random' or 'fixed'; method to generate initial conditions  
-- *modulo*: boolean; only for Method='poincare'; if True, *x* and *y* are taken modulo 2 x pi
+- *modulo*: boolean; only for Method='poincare'; if True, *x* and *y* are represented modulo 2&pi;
+- *threshold*: float; value used to discriminate between trapped and untrapped trajectories
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)
 - *TimeStep*: float; time step used by the integrator
 ####
-- *SaveData*: boolean; if True, the results are saved in a `.mat` file
+- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré section saved as a `.png` figure
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 
