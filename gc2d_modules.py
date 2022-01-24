@@ -97,33 +97,46 @@ def run_method(case):
 			y_mat = xp.meshgrid(y_vec, y_vec)
 			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
-		t_eval = 2 * xp.pi * xp.arange(0, case.Tf)
 		start = time.time()
-		sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
+		if not case.TwoStepIntegration:
+			sol = solve_ivp(case.eqn_phi, (0, 2 * xp.pi * case.Tf), y0, t_eval=2 * xp.pi * xp.arange(0, case.Tf + 1), max_step=case.TimeStep, atol=1, rtol=1)
+			x, y = xp.split(sol.y, 2)
+			untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			x_un, y_un = x[untrapped, :], y[untrapped, :]
+			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
+		else:
+			sol = solve_ivp(case.eqn_phi, (0, 2 * xp.pi * case.Tmid), y0, t_eval=2 * xp.pi * xp.arange(0, case.Tmid + 1), max_step=case.TimeStep, atol=1, rtol=1)
+			x, y = xp.split(sol.y, 2)
+			untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			x_un, y_un = x[untrapped, :], y[untrapped, :]
+			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
+			print('\033[90m        Continuing with the integration of {} untrapped particles... \033[00m'.format(untrapped.sum()))
+			y0 = xp.concatenate((x_un[:, -1].flatten(), y_un[:, -1].flatten()))
+			sol = solve_ivp(case.eqn_phi, (2 * xp.pi * case.Tmid, 2 * xp.pi * case.Tf), y0, t_eval=2 * xp.pi * xp.arange(case.Tmid, case.Tf + 1), max_step=case.TimeStep, atol=1, rtol=1)
+			x, y = xp.split(sol.y, 2)
+			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
+			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		x, y = xp.split(sol.y, 2)
-		untrapped = compute_untrapped((x, y), thresh=case.threshold)
 		if case.Method == 'poincare':
-			save_data(case, 'poincare', xp.array([sol.y[:case.Ntraj, :], sol.y[case.Ntraj:, :]]).transpose(), filestr)
+			save_data(case, 'poincare', [x_un, y_un, x_tr, y_tr], filestr)
 			if case.PlotResults:
-				x = x % (2 * xp.pi) * case.modulo
-				y = y % (2 * xp.pi) * case.modulo
 				fig, ax = plt.subplots(1, 1)
-				ax.plot(x[untrapped, :], y[untrapped, :], '.', color=cs[2], markersize=2)
-				ax.plot(x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :], '.', color=cs[3], markersize=2)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
+				ax.grid(case.grid)
 				if case.modulo:
+					ax.plot(x_un % 2 * xp.pi, y_un % 2 * xp.pi, '.', color=cs[2], markersize=2)
+					ax.plot(x_tr % 2 * xp.pi, y_tr % 2 * xp.pi, '.', color=cs[3], markersize=2)
 					ax.set_xlim(0, 2 * xp.pi)
 					ax.set_ylim(0, 2 * xp.pi)
 					ax.set_xticks([0, xp.pi, 2 * xp.pi])
 					ax.set_yticks([0, xp.pi, 2 * xp.pi])
-					ax.grid(case.grid)
 					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
 				if not case.modulo:
+					ax.plot(x_un, y_un, '.', color=cs[2], markersize=2)
+					ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=2)
 					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='r', lw=2))
-					ax.grid(case.grid)
 					ax.set_aspect('equal')
 				if case.SaveData:
 					fig.savefig(filestr + '.png', dpi=300)
@@ -134,7 +147,7 @@ def run_method(case):
 				print('\033[33m          Warning: not enough untrapped trajectories ({})'.format(untrapped.sum()))
 			r2 = xp.zeros(case.Tf)
 			for t in range(case.Tf):
-				r2[t] = ((x[untrapped, t:] - x[untrapped, :case.Tf-t])**2 + (y[untrapped, t:] - y[untrapped, :case.Tf-t])**2).sum() / (untrapped.sum() * (case.Tf - t))
+				r2[t] = ((x_un[:, t:] - x_un[:, :case.Tf-t])**2 + (y_un[:, t:] - y_un[:, :case.Tf-t])**2).sum() / (untrapped.sum() * (case.Tf - t))
 			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
 			trapped = xp.logical_not(untrapped).sum()
 			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')

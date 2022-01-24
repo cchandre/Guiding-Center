@@ -18,11 +18,14 @@ eta = 0.0
 
 Ntraj = 100
 Tf = 200
-init = 'random'
-modulo = True
-threshold = xp.pi
-grid = False
+TwoStepIntegration = True
+Tmid = 100
 TimeStep = 0.03
+init = 'random'
+modulo = False
+threshold = 4
+grid = False
+
 SaveData = False
 PlotResults = True
 Parallelization = (False, 3)
@@ -63,6 +66,8 @@ for dict in dict_list:
 		'grid': grid,
 		'Ntraj': Ntraj,
 		'Tf': Tf,
+		'TwoStepIntegration': TwoStepIntegration,
+		'Tmid': Tmid,
 		'init': init,
 		'TimeStep': TimeStep,
 		'SaveData': SaveData,

@@ -108,7 +108,7 @@ class GC2Dt:
 		self.dphidy_gc2_2 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
 
 	def eqn_phi(self, t, y):
-		yr = xp.array([y[:self.Ntraj], y[self.Ntraj:]]).transpose() % (2.0 * xp.pi)
+		yr = xp.array(xp.split(y, 2)).transpose() % (2.0 * xp.pi)
 		dphidx = interpn(self.xy_, self.dphidx_gc1_1, yr)
 		dphidy = interpn(self.xy_, self.dphidy_gc1_1, yr)
 		dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
@@ -159,20 +159,21 @@ class GC2Dk:
 		self.A22 = - (self.A**2) * self.eta * flr2_coeff22
 
 	def eqn_phi(self, t, y):
+		x = xp.split(y, 2)
 		cheby_coeff = eval_chebyu(self.M-1, xp.cos(t))
 		alpha_b = 0.5 + (xp.cos((self.M+1) * t) + xp.cos(self.M * t)) * cheby_coeff
 		beta_b = 0.5 + (xp.cos((self.M+1) * t) - xp.cos(self.M * t)) * cheby_coeff
-		smxy = xp.sin(y[:self.Ntraj] - y[self.Ntraj:])
-		spxy = xp.sin(y[:self.Ntraj] + y[self.Ntraj:])
-		dy_gc1 = self.A1 * xp.array([- alpha_b * smxy + beta_b * spxy, - alpha_b * smxy - beta_b * spxy])
+		smxy = xp.sin(x[0] - x[1])
+		spxy = xp.sin(x[0] + x[1])
+		dy_gc1 = self.A1 * xp.concatenate((- alpha_b * smxy + beta_b * spxy, - alpha_b * smxy - beta_b * spxy))
 		if self.GCorder == 1:
-			return dy_gc1.reshape(2 * self.Ntraj)
+			return dy_gc1
 		elif self.GCorder == 2:
-			v20 = self.A20 * alpha_b * beta_b * xp.sin(2 * y)
-			v2m2 = self.A22 * (alpha_b**2) * xp.sin(2 * (y[:self.Ntraj] - y[self.Ntraj:]))
-			v2p2 = self.A22 * (beta_b**2) * xp.sin(2 * (y[:self.Ntraj] + y[self.Ntraj:]))
-			dy_gc2 = 2 * xp.array([v20[self.Ntraj:] + v2p2 - v2m2, - v20[:self.Ntraj] - v2p2 - v2m2])
-			return (dy_gc1 + dy_gc2).reshape(2 * self.Ntraj)
+			v20 = xp.split(self.A20 * alpha_b * beta_b * xp.sin(2 * y), 2)
+			v2m2 = self.A22 * (alpha_b**2) * xp.sin(2 * (x[0] - x[1]))
+			v2p2 = self.A22 * (beta_b**2) * xp.sin(2 * (x[0] + x[1]))
+			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, - v20[0] - v2p2 - v2m2))
+			return dy_gc1 + dy_gc2
 
 if __name__ == "__main__":
 	main()
