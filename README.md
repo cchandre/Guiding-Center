@@ -26,6 +26,8 @@ ___
 ####
 - *Ntraj*: integer; number of trajectories to be integrated
 - *Tf*: integer; number of periods for the integration of the trajectories
+- *TwoStepIntegration*: boolean; if true, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continue integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
+- *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
 - *init*: boolean; 'random' or 'fixed'; method to generate initial conditions  
 - *modulo*: boolean; only for Method='poincare'; if True, *x* and *y* are represented modulo 2&pi;
 - *threshold*: float; value used to discriminate between trapped and untrapped trajectories
