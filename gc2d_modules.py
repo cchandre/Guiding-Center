@@ -97,22 +97,23 @@ def run_method(case):
 			y_mat = xp.meshgrid(y_vec, y_vec)
 			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
+		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
-			sol = solve_ivp(case.eqn_phi, (0, 2 * xp.pi * case.Tf), y0, t_eval=2 * xp.pi * xp.arange(0, case.Tf + 1), max_step=case.TimeStep, atol=1, rtol=1)
+			sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 			x, y = xp.split(sol.y, 2)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
 		else:
-			sol = solve_ivp(case.eqn_phi, (0, 2 * xp.pi * case.Tmid), y0, t_eval=2 * xp.pi * xp.arange(0, case.Tmid + 1), max_step=case.TimeStep, atol=1, rtol=1)
+			sol = solve_ivp(case.eqn_phi, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
 			x, y = xp.split(sol.y, 2)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
 			print('\033[90m        Continuing with the integration of {} untrapped particles... \033[00m'.format(untrapped.sum()))
-			y0 = xp.concatenate((x_un[:, -1].flatten(), y_un[:, -1].flatten()))
-			sol = solve_ivp(case.eqn_phi, (2 * xp.pi * case.Tmid, 2 * xp.pi * case.Tf), y0, t_eval=2 * xp.pi * xp.arange(case.Tmid, case.Tf + 1), max_step=case.TimeStep, atol=1, rtol=1)
+			y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
+			sol = solve_ivp(case.eqn_phi, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 			x, y = xp.split(sol.y, 2)
 			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
@@ -147,7 +148,7 @@ def run_method(case):
 				print('\033[33m          Warning: not enough untrapped trajectories ({})'.format(untrapped.sum()))
 			r2 = xp.zeros(case.Tf)
 			for t in range(case.Tf):
-				r2[t] = ((x_un[:, t:] - x_un[:, :case.Tf-t])**2 + (y_un[:, t:] - y_un[:, :case.Tf-t])**2).sum() / (untrapped.sum() * (case.Tf - t))
+				r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
 			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
 			trapped = xp.logical_not(untrapped).sum()
 			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')

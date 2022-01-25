@@ -165,14 +165,14 @@ class GC2Dk:
 		beta_b = 0.5 + (xp.cos((self.M+1) * t) - xp.cos(self.M * t)) * cheby_coeff
 		smxy = xp.sin(x[0] - x[1])
 		spxy = xp.sin(x[0] + x[1])
-		dy_gc1 = self.A1 * xp.concatenate((- alpha_b * smxy + beta_b * spxy, - alpha_b * smxy - beta_b * spxy))
+		dy_gc1 = self.A1 * xp.concatenate((- alpha_b * smxy + beta_b * spxy, - alpha_b * smxy - beta_b * spxy), axis=None)
 		if self.GCorder == 1:
 			return dy_gc1
 		elif self.GCorder == 2:
 			v20 = xp.split(self.A20 * alpha_b * beta_b * xp.sin(2 * y), 2)
 			v2m2 = self.A22 * (alpha_b**2) * xp.sin(2 * (x[0] - x[1]))
 			v2p2 = self.A22 * (beta_b**2) * xp.sin(2 * (x[0] + x[1]))
-			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, - v20[0] - v2p2 - v2m2))
+			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, - v20[0] - v2p2 - v2m2), axis=None)
 			return dy_gc1 + dy_gc2
 
 if __name__ == "__main__":

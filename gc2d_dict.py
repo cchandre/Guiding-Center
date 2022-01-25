@@ -5,30 +5,30 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare'
+Method = 'diffusion'
 
 FLR = ('all', 'all')
 GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0.1, 0.1, 1)
+iterable_values = xp.linspace(0, 0.5, 10)
 A = 0.6
 #rho = 0.7
 eta = 0.0
 
 Ntraj = 100
-Tf = 200
+Tf = 500
 TwoStepIntegration = True
-Tmid = 100
-TimeStep = 0.03
+Tmid = 250
+TimeStep = 0.05
 init = 'random'
 modulo = False
 threshold = 4
 grid = False
 
 SaveData = False
-PlotResults = True
-Parallelization = (False, 3)
+PlotResults = False
+Parallelization = (False, 2)
 
 darkmode = True
 
