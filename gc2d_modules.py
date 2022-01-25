@@ -95,7 +95,7 @@ def run_method(case):
 		elif case.init == 'fixed':
 			y_vec = xp.linspace(0, 2 * xp.pi, int(xp.sqrt(case.Ntraj)), endpoint=False)
 			y_mat = xp.meshgrid(y_vec, y_vec)
-			y0 = xp.concatenate((y_mat[0].flatten(), y_mat[1].flatten()))
+			y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
@@ -146,15 +146,24 @@ def run_method(case):
 		if case.Method == 'diffusion':
 			if untrapped.sum() <= 5:
 				print('\033[33m          Warning: not enough untrapped trajectories ({})'.format(untrapped.sum()))
-			r2 = xp.zeros(case.Tf)
-			for t in range(case.Tf):
-				r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
-			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-			trapped = xp.logical_not(untrapped).sum()
-			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
-			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
-			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
+			else:
+				r2 = xp.zeros(case.Tf)
+				for t in range(case.Tf):
+					r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
+				diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
+				if case.PlotResults:
+					fig, ax = plt.subplots(1, 1)
+					ax.set_xlabel('$t$')
+					ax.set_ylabel('$r_2$')
+					t = t_eval[:-1]
+					plt.plot(t, r2, 'b', lw=2)
+					plt.plot(t, diff_data.intercept + diff_data.slope * t, 'r', lw=2)
+					plt.pause(0.5)
+				trapped = xp.logical_not(untrapped).sum()
+				save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
+				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
+				print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
+				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh

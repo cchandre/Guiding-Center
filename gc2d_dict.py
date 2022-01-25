@@ -17,9 +17,9 @@ A = 0.6
 eta = 0.0
 
 Ntraj = 100
-Tf = 500
+Tf = 2000
 TwoStepIntegration = True
-Tmid = 250
+Tmid = 300
 TimeStep = 0.05
 init = 'random'
 modulo = False
@@ -27,7 +27,7 @@ threshold = 4
 grid = False
 
 SaveData = False
-PlotResults = False
+PlotResults = True
 Parallelization = (False, 2)
 
 darkmode = True
