@@ -11,7 +11,7 @@ FLR = ('all', 'all')
 GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0, 0.5, 10)
+iterable_values = xp.linspace(0, 0, 1)
 A = 0.6
 #rho = 0.7
 eta = 0.0
@@ -19,11 +19,7 @@ eta = 0.0
 Ntraj = 100
 Tf = 2000
 TwoStepIntegration = True
-<<<<<<< Updated upstream
-Tmid = 300
-=======
 Tmid = 100
->>>>>>> Stashed changes
 TimeStep = 0.05
 init = 'random'
 modulo = False

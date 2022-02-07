@@ -33,6 +33,7 @@ from matplotlib.patches import Rectangle
 from scipy.integrate import solve_ivp
 from scipy.stats import linregress
 from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
 from scipy.io import savemat
 import time
 from datetime import date
@@ -151,23 +152,24 @@ def run_method(case):
 				r2 = xp.zeros(case.Tf)
 				for t in range(case.Tf):
 					r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
-				diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-				popt, pcov = curve_fit(lambda t, a, b: (a * t)**b, t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8], bounds=((0, 0.25), (xp.inf, 3)))
+				t_fit, r2_fit = t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
+				diff_data = linregress(t_fit, r2_fit)
+				func_fit = lambda t, a, b: (a * t)**b
+				popt, pcov = curve_fit(func_fit, t_fit, r2_fit, bounds=((0, 0.25), (xp.inf, 3)))
+				R2 = r2_score(r2_fit, func_fit(t_fit, *popt))
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
 					ax.set_ylabel('$r_2$')
 					t = t_eval[:-1]
 					plt.plot(t, r2, 'b', lw=2)
-					plt.plot(t, diff_data.intercept + diff_data.slope * t, 'r', lw=2)
+					plt.plot(t, func_fit(t, *popt), 'r', lw=2)
 					plt.pause(0.5)
 				trapped = xp.logical_not(untrapped).sum()
 				save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-				print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
-				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-				print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(popt[0]))
-				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(pcov[0]))
+				print('\033[96m          diffusion data = {:.6f}, {:.6f} \033[00m'.format(popt[0], popt[1]))
+				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(R2))
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
