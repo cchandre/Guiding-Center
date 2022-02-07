@@ -147,12 +147,12 @@ def run_method(case):
 		if case.Method == 'diffusion':
 			if untrapped.sum() <= 5:
 				print('\033[33m          Warning: not enough untrapped trajectories ({})'.format(untrapped.sum()))
-<<<<<<< Updated upstream
 			else:
 				r2 = xp.zeros(case.Tf)
 				for t in range(case.Tf):
 					r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
 				diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
+				popt, pcov = curve_fit(lambda t, a, b: (a * t)**b, t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8], bounds=((0, 0.25), (xp.inf, 3)))
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
@@ -166,20 +166,8 @@ def run_method(case):
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 				print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
 				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-=======
-			r2 = xp.zeros(case.Tf)
-			for t in range(case.Tf):
-				r2[t] = ((x_un[:, t:] - x_un[:, :case.Tf-t])**2 + (y_un[:, t:] - y_un[:, :case.Tf-t])**2).sum() / (untrapped.sum() * (case.Tf - t))
-			diff_data = linregress(t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8])
-			popt, pcov = curve_fit(lambda t, a, b: (a * t)**b, t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8], bounds=((0, 0.25), (xp.inf, 3)))
-			trapped = xp.logical_not(untrapped).sum()
-			save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
-			print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(diff_data.slope))
-			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(diff_data.rvalue**2))
-			print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(popt[0]))
-			print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(pcov[0]))
->>>>>>> Stashed changes
+				print('\033[96m          diffusion coefficient = {:.6f} \033[00m'.format(popt[0]))
+				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(pcov[0]))
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
