@@ -19,7 +19,11 @@ eta = 0.0
 Ntraj = 100
 Tf = 2000
 TwoStepIntegration = True
+<<<<<<< Updated upstream
 Tmid = 300
+=======
+Tmid = 100
+>>>>>>> Stashed changes
 TimeStep = 0.05
 init = 'random'
 modulo = False
