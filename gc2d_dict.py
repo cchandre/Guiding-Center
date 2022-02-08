@@ -11,7 +11,7 @@ FLR = ('all', 'all')
 GCorder = 1
 
 A = 0.7
-rho = xp.linspace(0, 0.3, 10)
+rho = xp.linspace(0, 0.3, 2)
 eta = 0.0
 
 Ntraj = 100

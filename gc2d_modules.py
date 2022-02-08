@@ -175,7 +175,7 @@ def run_method(case):
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
-	return xp.where(vec==True, output[0], output[1])
+	return xp.where(vec==True, *output)
 
 def save_data(case, name, data, filestr, info=[]):
 	if case.SaveData:

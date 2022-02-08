@@ -100,12 +100,10 @@ class GC2Dt:
 		self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
 		self.phi_gc2_0 = - self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
 		self.phi_gc2_2 = - self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
-		self.dphidx_gc1_1 = xp.pad(ifft2(1j * nm[0] * fft_phi_gc1_1) * (self.N**2), ((0, 1),), mode='wrap')
-		self.dphidy_gc1_1 = xp.pad(ifft2(1j * nm[1] * fft_phi_gc1_1) * (self.N**2), ((0, 1),), mode='wrap')
-		self.dphidx_gc2_0 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
-		self.dphidy_gc2_0 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_0)), ((0, 1),), mode='wrap')
-		self.dphidx_gc2_2 = xp.pad(ifft2(1j * nm[0] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
-		self.dphidy_gc2_2 = xp.pad(ifft2(1j * nm[1] * fft2(self.phi_gc2_2)), ((0, 1),), mode='wrap')
+		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
+		self.dphidx_gc1_1, self.dphidy_gc1_1 = derivs(self.phi_gc1_1)
+		self.dphidx_gc2_0, self.dphidy_gc2_0 = derivs(self.phi_gc2_0)
+		self.dphidx_gc2_2, self.dphidy_gc2_2 = derivs(self.phi_gc2_2)
 
 	def eqn_phi(self, t, y):
 		yr = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
