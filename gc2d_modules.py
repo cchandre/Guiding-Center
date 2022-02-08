@@ -120,7 +120,7 @@ def run_method(case):
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		if case.Method == 'poincare':
-			save_data(case, 'poincare', xp.array([x_un, y_un, x_tr, y_tr], dtype=object), filestr, info='x_untrapped, y_untrapped, x_trapped, y_untrapped')
+			save_data(case, 'poincare', xp.array([xp.transpose(x_un), xp.transpose(y_un), xp.transpose(x_tr), xp.transpose(y_tr)], dtype=object), filestr, info='x_untrapped / y_untrapped / x_trapped / y_untrapped')
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')

@@ -5,18 +5,18 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'diffusion'
+Method = 'poincare'
 
 FLR = ('all', 'all')
 GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0, 0.3, 100)
+iterable_values = xp.linspace(0, 0, 1)
 A = 0.7
-#rho = 0.7
+#rho = 0.1
 eta = 0.0
 
-Ntraj = 1600
+Ntraj = 100
 Tf = 2000
 TwoStepIntegration = True
 Tmid = 1000
@@ -28,7 +28,7 @@ grid = False
 
 SaveData = True
 PlotResults = False
-Parallelization = (True, 34)
+Parallelization = (False, 34)
 
 darkmode = True
 
