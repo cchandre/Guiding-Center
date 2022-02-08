@@ -11,24 +11,24 @@ FLR = ('all', 'all')
 GCorder = 1
 
 iterable_name = 'rho'
-iterable_values = xp.linspace(0, 0, 1)
-A = 0.6
+iterable_values = xp.linspace(0, 0.3, 100)
+A = 0.7
 #rho = 0.7
 eta = 0.0
 
-Ntraj = 100
+Ntraj = 1600
 Tf = 2000
 TwoStepIntegration = True
-Tmid = 100
+Tmid = 1000
 TimeStep = 0.05
 init = 'random'
 modulo = False
 threshold = 4
 grid = False
 
-SaveData = False
-PlotResults = True
-Parallelization = (False, 2)
+SaveData = True
+PlotResults = False
+Parallelization = (True, 34)
 
 darkmode = True
 

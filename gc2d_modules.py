@@ -31,7 +31,6 @@ from matplotlib.animation import ArtistAnimation, PillowWriter
 from matplotlib import colors
 from matplotlib.patches import Rectangle
 from scipy.integrate import solve_ivp
-from scipy.stats import linregress
 from scipy.optimize import curve_fit
 from sklearn.metrics import r2_score
 from scipy.io import savemat
@@ -153,7 +152,6 @@ def run_method(case):
 				for t in range(case.Tf):
 					r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
 				t_fit, r2_fit = t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
-				diff_data = linregress(t_fit, r2_fit)
 				func_fit = lambda t, a, b: (a * t)**b
 				popt, pcov = curve_fit(func_fit, t_fit, r2_fit, bounds=((0, 0.25), (xp.inf, 3)))
 				R2 = r2_score(r2_fit, func_fit(t_fit, *popt))
@@ -166,10 +164,14 @@ def run_method(case):
 					plt.plot(t, func_fit(t, *popt), 'r', lw=2)
 					plt.pause(0.5)
 				trapped = xp.logical_not(untrapped).sum()
-				save_data(case, 'diffusion', [trapped, diff_data.slope, diff_data.rvalue**2], filestr, info='trapped particles / diffusion coefficient / R2')
+				if case.SaveData:
+					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
+					file = open(type(case).__name__ + '_diffusion.txt', 'a')
+					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
+					file.close()
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-				print('\033[96m          diffusion data = {:.6f}, {:.6f} \033[00m'.format(popt[0], popt[1]))
-				print('\033[96m                     with an R2 = {:.6f} \033[00m'.format(R2))
+				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
+				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
