@@ -120,7 +120,7 @@ def run_method(case):
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		if case.Method == 'poincare':
-			save_data(case, 'poincare', [x_un, y_un, x_tr, y_tr], filestr)
+			save_data(case, 'poincare', xp.array([x_un, y_un, x_tr, y_tr], dtype=object), filestr, info='x_untrapped, y_untrapped, x_trapped, y_untrapped')
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
@@ -155,6 +155,15 @@ def run_method(case):
 				func_fit = lambda t, a, b: (a * t)**b
 				popt, pcov = curve_fit(func_fit, t_fit, r2_fit, bounds=((0, 0.25), (xp.inf, 3)))
 				R2 = r2_score(r2_fit, func_fit(t_fit, *popt))
+				trapped = xp.logical_not(untrapped).sum()
+				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
+				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
+				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
+				if case.SaveData:
+					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
+					file = open(type(case).__name__ + '_diffusion.txt', 'a')
+					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
+					file.close()
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
@@ -163,15 +172,6 @@ def run_method(case):
 					plt.plot(t, r2, 'b', lw=2)
 					plt.plot(t, func_fit(t, *popt), 'r', lw=2)
 					plt.pause(0.5)
-				trapped = xp.logical_not(untrapped).sum()
-				if case.SaveData:
-					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
-					file = open(type(case).__name__ + '_diffusion.txt', 'a')
-					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
-					file.close()
-				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
-				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
