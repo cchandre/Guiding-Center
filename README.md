@@ -10,6 +10,10 @@ Once [`gc2d_dict.py`](https://github.com/cchandre/Guiding-Center/blob/main/gc2d_
 ```sh
 python3 gc2d.py
 ```
+or 
+```sh
+nohup python3 -u gc2d.py &>gc2d.out < /dev/null &
+```
 
 ___
 ##  Parameter dictionary
