@@ -10,14 +10,14 @@ Method = 'diffusion'
 FLR = ('all', 'all')
 GCorder = 1
 
-A = 0.7
-rho = xp.linspace(0, 0.3, 2)
-eta = 0.0
+A = [0.7, 0.8, 0.9]
+rho = 0
+eta = 0
 
-Ntraj = 100
-Tf = 200
+Ntraj = 1000
+Tf = 5000
 TwoStepIntegration = True
-Tmid = 100
+Tmid = 1000
 TimeStep = 0.05
 init = 'random'
 modulo = False
