@@ -23,9 +23,9 @@ ___
 ####
 - *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
 - *GCorder*: 1 or 2; order in the guiding-center expansion 
-- *A*: float; amplitude of the electrostatic potential [theory: &epsilon;<sub>&delta;</sub>/B]
-- *rho*: float; value of the Larmor radius 
-- *eta*: float; coefficient in front of the GC order 2 potential; eta>0 for positive charge, eta<0 for negative charge [theory: 1/(2&Omega;)] 
+- *A*: float or arrays of floats; amplitude of the electrostatic potential [theory: &epsilon;<sub>&delta;</sub>/B]
+- *rho*: float or arrays of floats; value of the Larmor radius 
+- *eta*: float or arrays of floats; coefficient in front of the GC order 2 potential; eta>0 for positive charge, eta<0 for negative charge [theory: 1/(2&Omega;)] 
 - *M*: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent') 
 ####
 - *Ntraj*: integer; number of trajectories to be integrated
