@@ -23,9 +23,9 @@ ___
 ####
 - *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
 - *GCorder*: 1 or 2; order in the guiding-center expansion 
-- *A*: float or arrays of floats; amplitude of the electrostatic potential [theory: &epsilon;<sub>&delta;</sub>/B]
-- *rho*: float or arrays of floats; value of the Larmor radius 
-- *eta*: float or arrays of floats; coefficient in front of the GC order 2 potential; eta>0 for positive charge, eta<0 for negative charge [theory: 1/(2&Omega;)] 
+- *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
+- *rho*: float or array of floats; value(s) of the Larmor radius 
+- *eta*: float or array of floats; value(s) of the coefficient in front of the GC order 2 potential; &eta;>0 for positive charge, &eta;<0 for negative charge [theory: &eta;=1/(2&Omega;)] 
 - *M*: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent') 
 ####
 - *Ntraj*: integer; number of trajectories to be integrated
@@ -35,7 +35,7 @@ ___
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
 - *modulo*: boolean; if True, *x* and *y* are represented modulo 2&pi; (only for Method='poincare' and PlotResults=True)
 - *threshold*: float; value used to discriminate between trapped and untrapped trajectories
-- *N*: integer; number of points on each axis for 'turbulent' (default = 2 ** 10)
+- *N*: integer; number of points on each axis for 'turbulent' (default = 2<sup>10</sup>)
 - *TimeStep*: float; time step used by the integrator
 ####
 - *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré section saved as a `.png` figure
