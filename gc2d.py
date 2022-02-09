@@ -27,7 +27,7 @@
 
 import numpy as xp
 import matplotlib.pyplot as plt
-from scipy.fft import fft2, ifft2, fftfreq
+from numpy.fft import fft2, ifft2, fftfreq
 from scipy.interpolate import interpn
 from scipy.special import jv, eval_chebyu
 import sympy as sp

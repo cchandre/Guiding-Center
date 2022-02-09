@@ -35,9 +35,9 @@ darkmode = True
 ###################################################################################################
 if FLR[0] == 'none' and FLR[1] == 'none':
 	rho = 0
-if rho == 0:
+if xp.all((rho == 0)):
 	FLR = ('none', 'none')
-if eta == 0:
+if xp.all((eta == 0)):
 	GCorder = 1
 else:
 	GCorder = 2
