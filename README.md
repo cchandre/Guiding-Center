@@ -19,7 +19,7 @@ ___
 ##  Parameter dictionary
 
 - *Potential*: string; 'KMdCN' or 'turbulent' 
-- *Method*: string; 'potentials' (only for 'turbulent'), 'diffusion', 'poincare'
+- *Method*: string; 'potentials' (only for Potential='turbulent'), 'diffusion', 'poincare'
 ####
 - *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
 - *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
@@ -37,7 +37,7 @@ ___
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2<sup>10</sup>)
 - *TimeStep*: float; time step used by the integrator
 ####
-- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré section saved as a `.png` figure
+- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré sections and diffusion plots are saved as `.png` files
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 - *dpi*: integer; dpi value for the figures
