@@ -164,6 +164,7 @@ def run_method(case):
 					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
 					file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a+')
 					if len(file.read()) == 0:
+						file.writelines('%  diffusion law: r^2 = (a t)^b \n')
 						file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
 					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 					file.close()
@@ -175,6 +176,9 @@ def run_method(case):
 					plt.plot(t, r2, cs[1], lw=1)
 					plt.plot(t_fit,r2_fit, cs[2], lw=2)
 					plt.plot(t, func_fit(t, *popt), cs[3], lw=2)
+					if case.SaveData:
+						fig.savefig(filestr + '.png', dpi=case.dpi)
+						print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
 					plt.pause(0.5)
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
