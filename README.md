@@ -19,7 +19,7 @@ ___
 ##  Parameter dictionary
 
 - *Potential*: string; 'KMdCN' or 'turbulent' 
-- *Method*: string; 'plot_potentials' (only for 'turbulent'), 'diffusion', 'poincare'
+- *Method*: string; 'potentials' (only for 'turbulent'), 'diffusion', 'poincare'
 ####
 - *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
 - *GCorder*: 1 or 2; order in the guiding-center expansion 
