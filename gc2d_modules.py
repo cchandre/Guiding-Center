@@ -54,11 +54,12 @@ def run_method(case):
 	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
 	if case.GCorder == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
-	if case.Method == 'plot_potentials' and case.Potential == 'turbulent':
+	filestr += '_' + case.Method
+	if case.Method == 'potentials' and case.Potential == 'turbulent':
 		start = time.time()
 		plt.rcParams.update({'figure.figsize': [8 * (case.GCorder +1), 8]})
 		data = xp.array([case.phi, case.phi_gc1_1, case.phi_gc2_0, case.phi_gc2_2])
-		save_data(case, 'potentials', data, filestr)
+		save_data(case, data, filestr)
 		time_range = xp.linspace(0, 2 * xp.pi, 50)
 		min_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.min()
 		max_phi = (case.phi[:, :, xp.newaxis] * xp.exp(-1j * time_range[xp.newaxis, xp.newaxis, :])).imag.max()
@@ -87,7 +88,7 @@ def run_method(case):
 				axs[2].set_title(r'$-\frac{\eta}{\rho}\frac{\partial}{\partial \rho} \left(\langle \phi^2\rangle -\langle \phi\rangle^2 \right)$')
 			ims.append(im)
 		fig.colorbar(im[case.GCorder], ax=axs.ravel().tolist())
-		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30))
+		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		print('\033[90m        Animation saved in {} \033[00m'.format(filestr + '.gif'))
 	elif case.Method in ['poincare', 'diffusion']:
@@ -120,15 +121,15 @@ def run_method(case):
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		if case.Method == 'poincare':
-			save_data(case, 'poincare', xp.array([xp.transpose(x_un), xp.transpose(y_un), xp.transpose(x_tr), xp.transpose(y_tr)], dtype=object), filestr, info='x_untrapped / y_untrapped / x_trapped / y_untrapped')
+			save_data(case, xp.array([xp.transpose(x_un), xp.transpose(y_un), xp.transpose(x_tr), xp.transpose(y_tr)], dtype=object), filestr, info='x_untrapped / y_untrapped / x_trapped / y_trapped')
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				ax.grid(case.grid)
 				if case.modulo:
-					ax.plot(x_un % 2 * xp.pi, y_un % 2 * xp.pi, '.', color=cs[2], markersize=2)
-					ax.plot(x_tr % 2 * xp.pi, y_tr % 2 * xp.pi, '.', color=cs[3], markersize=2)
+					ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[2], markersize=2, markeredgecolor='none')
+					ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[3], markersize=2, markeredgecolor='none')
 					ax.set_xlim(0, 2 * xp.pi)
 					ax.set_ylim(0, 2 * xp.pi)
 					ax.set_xticks([0, xp.pi, 2 * xp.pi])
@@ -136,12 +137,12 @@ def run_method(case):
 					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
 				if not case.modulo:
-					ax.plot(x_un, y_un, '.', color=cs[2], markersize=2)
-					ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=2)
+					ax.plot(x_un, y_un, '.', color=cs[2], markersize=2, markeredgecolor='none')
+					ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=2, markeredgecolor='none')
 					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='r', lw=2))
 					ax.set_aspect('equal')
 				if case.SaveData:
-					fig.savefig(filestr + '.png', dpi=300)
+					fig.savefig(filestr + '.png', dpi=case.dpi)
 					print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
 				plt.pause(0.5)
 		if case.Method == 'diffusion':
@@ -161,28 +162,31 @@ def run_method(case):
 				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
 				if case.SaveData:
 					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
-					file = open(type(case).__name__ + '_diffusion.txt', 'a')
+					file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a+')
+					if len(file.read()) == 0:
+						file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
 					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 					file.close()
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
-					ax.set_ylabel('$r_2$')
+					ax.set_ylabel('$r^2$')
 					t = t_eval[:-1]
-					plt.plot(t, r2, 'b', lw=2)
-					plt.plot(t, func_fit(t, *popt), 'r', lw=2)
+					plt.plot(t, r2, cs[1], lw=1)
+					plt.plot(t_fit,r2_fit, cs[2], lw=2)
+					plt.plot(t, func_fit(t, *popt), cs[3], lw=2)
 					plt.pause(0.5)
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
 	return xp.where(vec==True, *output)
 
-def save_data(case, name, data, filestr, info=[]):
+def save_data(case, data, filestr, info=[]):
 	if case.SaveData:
 		mdic = case.DictParams.copy()
 		mdic.update({'data': data, 'info': info})
 		date_today = date.today().strftime(" %B %d, %Y\n")
 		mdic.update({'date': date_today, 'author': 'cristel.chandre@cnrs.fr'})
-		name_file = type(case).__name__ + '_' + name + '_' + filestr + '.mat'
+		name_file = type(case).__name__ + '_' + filestr + '.mat'
 		savemat(name_file, mdic)
 		print('\033[90m        Results saved in {} \033[00m'.format(name_file))

@@ -8,26 +8,26 @@ Potential = 'turbulent'
 Method = 'diffusion'
 
 FLR = ('all', 'all')
-GCorder = 1
 
-A = [0.7, 0.8, 0.9]
-rho = 0
+A = 0.7
+rho = xp.linspace(0, 0.3, 100)
 eta = 0
 
-Ntraj = 1000
+Ntraj = 1024
 Tf = 5000
+threshold = 4
 TwoStepIntegration = True
 Tmid = 1000
 TimeStep = 0.05
 init = 'random'
 modulo = False
-threshold = 4
 grid = False
 
-SaveData = False
-PlotResults = True
-Parallelization = (False, 34)
+SaveData = True
+PlotResults = False
+Parallelization = (True, 34)
 
+dpi = 300
 darkmode = True
 
 ###################################################################################################
@@ -35,8 +35,12 @@ darkmode = True
 ###################################################################################################
 if FLR[0] == 'none' and FLR[1] == 'none':
 	rho = 0
-if GCorder == 1:
-	eta = 0
+if rho == 0:
+	FLR = ('none', 'none')
+if eta == 0:
+	GCorder = 1
+else:
+	GCorder = 2
 val_params = xp.meshgrid(A, rho, eta, indexing='ij')
 num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
@@ -67,5 +71,6 @@ for dict in dict_list:
 		'TimeStep': TimeStep,
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,
+		'dpi': dpi,
 		'darkmode': darkmode})
 ###################################################################################################
