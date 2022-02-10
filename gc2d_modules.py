@@ -52,7 +52,7 @@ def run_method(case):
 	plt.rc('image', cmap='bwr')
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
-	filestr = 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
+	filestr = type(case).__name__ + '_' + 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
 	if case.GCorder == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
 	filestr += '_' + case.Method
@@ -91,7 +91,7 @@ def run_method(case):
 		fig.colorbar(im[case.GCorder], ax=axs.ravel().tolist())
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		print('\033[90m        Animation saved in {} \033[00m'.format(filestr + '.gif'))
+		print('\033[90m        Animation saved in {}.gif \033[00m'.format(filestr))
 	elif case.Method in ['poincare', 'diffusion']:
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
@@ -144,7 +144,7 @@ def run_method(case):
 					ax.set_aspect('equal')
 				if case.SaveData:
 					fig.savefig(filestr + '.png', dpi=case.dpi)
-					print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
+					print('\033[90m        Figure saved in {}.png \033[00m'.format(filestr))
 				plt.pause(0.5)
 		if case.Method == 'diffusion':
 			if untrapped.sum() <= 5:
@@ -179,7 +179,7 @@ def run_method(case):
 					plt.plot(t, func_fit(t, *popt), cs[3], lw=2)
 					if case.SaveData:
 						fig.savefig(filestr + '.png', dpi=case.dpi)
-						print('\033[90m        Figure saved in {} \033[00m'.format(filestr + '.png'))
+						print('\033[90m        Figure saved in {}.png \033[00m'.format(filestr))
 					plt.pause(0.5)
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
@@ -190,8 +190,6 @@ def save_data(case, data, filestr, info=[]):
 	if case.SaveData:
 		mdic = case.DictParams.copy()
 		mdic.update({'data': data, 'info': info})
-		date_today = date.today().strftime(" %B %d, %Y\n")
-		mdic.update({'date': date_today, 'author': 'cristel.chandre@cnrs.fr'})
-		name_file = type(case).__name__ + '_' + filestr + '.mat'
-		savemat(name_file, mdic)
-		print('\033[90m        Results saved in {} \033[00m'.format(name_file))
+		mdic.update({'date': date.today().strftime(" %B %d, %Y\n"), 'author': 'cristel.chandre@cnrs.fr'})
+		savemat(filestr, mdic)
+		print('\033[90m        Results saved in {}.mat \033[00m'.format(filestr))
