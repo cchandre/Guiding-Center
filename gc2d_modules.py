@@ -36,6 +36,7 @@ from sklearn.metrics import r2_score
 from scipy.io import savemat
 import time
 from datetime import date
+import os
 
 def run_method(case):
 	if case.darkmode:
@@ -162,8 +163,8 @@ def run_method(case):
 				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
 				if case.SaveData:
 					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
-					file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a+')
-					if len(file.read()) == 0:
+					file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
+					if os.path.getsize(type(case).__name__ + '_' + case.Method + '.txt') == 0:
 						file.writelines('%  diffusion law: r^2 = (a t)^b \n')
 						file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
 					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
