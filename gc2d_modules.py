@@ -175,7 +175,7 @@ def run_method(case):
 					ax.set_ylabel('$r^2$')
 					t = t_eval[:-1]
 					plt.plot(t, r2, cs[1], lw=1)
-					plt.plot(t_fit,r2_fit, cs[2], lw=2)
+					plt.plot(t_fit, r2_fit, cs[2], lw=2)
 					plt.plot(t, func_fit(t, *popt), cs[3], lw=2)
 					if case.SaveData:
 						fig.savefig(filestr + '.png', dpi=case.dpi)
