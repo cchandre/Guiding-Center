@@ -153,30 +153,31 @@ def run_method(case):
 				r2 = xp.zeros(case.Tf)
 				for t in range(case.Tf):
 					r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
-				t_fit, r2_fit = t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
+				t_win, r2_win = t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
 				func_fit = lambda t, a, b: (a * t)**b
-				popt, pcov = curve_fit(func_fit, t_fit, r2_fit, bounds=((0, 0.25), (xp.inf, 3)))
-				R2 = r2_score(r2_fit, func_fit(t_fit, *popt))
+				popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
+				t = t_eval[:-1]
+				r2_fit = func_fit(t, *popt)
+				R2 = r2_score(r2_win, func_fit(t_win, *popt))
 				trapped = xp.logical_not(untrapped).sum()
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
 				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
-				if case.SaveData:
-					vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
-					file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
-					if os.path.getsize(file.name) == 0:
-						file.writelines('%  diffusion law: r^2 = (a t)^b \n')
-						file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
-					file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
-					file.close()
+				vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
+				file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
+				if os.path.getsize(file.name) == 0:
+					file.writelines('%  diffusion law: r^2 = (a t)^b \n')
+					file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
+				file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
+				file.close()
+				save_data(case, xp.array([t, r2, r2_fit], dtype=object), filestr, info='t / r2 / r2_fit')
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
 					ax.set_ylabel('$r^2$')
-					t = t_eval[:-1]
 					plt.plot(t, r2, cs[1], lw=1)
-					plt.plot(t_fit, r2_fit, cs[2], lw=2)
-					plt.plot(t, func_fit(t, *popt), cs[3], lw=2)
+					plt.plot(t_win, r2_win, cs[2], lw=2)
+					plt.plot(t, r2_fit, cs[3], lw=2)
 					if case.SaveData:
 						fig.savefig(filestr + '.png', dpi=case.dpi)
 						print('\033[90m        Figure saved in {}.png \033[00m'.format(filestr))
