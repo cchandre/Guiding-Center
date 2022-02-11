@@ -37,7 +37,7 @@ ___
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2<sup>10</sup>)
 - *TimeStep*: float; time step used by the integrator
 ####
-- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré sections and diffusion plots are saved as `.png` files; NB: the diffusion data are saved in a `.txt`file regardless of the value of *SaveData*
+- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré sections and diffusion plots are saved as `.png` files; NB: the diffusion data are saved in a `.txt` file regardless of the value of *SaveData*
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 - *dpi*: integer; dpi value for the figures
