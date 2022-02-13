@@ -9,7 +9,7 @@ Method = 'diffusion'
 
 FLR = ('all', 'all')
 
-A = 0.7
+A = 0.8
 rho = xp.linspace(0, 0.3, 100)
 eta = 0
 
