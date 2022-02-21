@@ -43,13 +43,14 @@ def run_method(case):
 		cs = ['k', 'w', 'c', 'm']
 	else:
 		cs = ['w', 'k', 'b', 'm']
-	plt.rc('figure', facecolor=cs[0], titlesize=30, figsize=[8,8])
-	plt.rc('text', usetex=True, color=cs[1])
-	plt.rc('font', family='serif', size=24)
-	plt.rc('axes', facecolor=cs[0], edgecolor=cs[1], labelsize=30, labelcolor=cs[1], titlecolor=cs[1])
-	plt.rc('xtick', color=cs[1], labelcolor=cs[1])
-	plt.rc('ytick', color=cs[1], labelcolor=cs[1])
-	plt.rc('image', cmap='bwr')
+	if case.PlotResults:
+		plt.rc('figure', facecolor=cs[0], titlesize=30, figsize=[8,8])
+		plt.rc('text', usetex=True, color=cs[1])
+		plt.rc('font', family='serif', size=24)
+		plt.rc('axes', facecolor=cs[0], edgecolor=cs[1], labelsize=30, labelcolor=cs[1], titlecolor=cs[1])
+		plt.rc('xtick', color=cs[1], labelcolor=cs[1])
+		plt.rc('ytick', color=cs[1], labelcolor=cs[1])
+		plt.rc('image', cmap='bwr')
 	print('\033[92m    {} \033[00m'.format(case.__str__()))
 	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
 	filestr = type(case).__name__ + '_' + 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
