@@ -9,12 +9,12 @@ Method = 'diffusion'
 
 FLR = ('all', 'all')
 
-A = 0.7
-rho = xp.linspace(0, 0.3, 100)
+A = 0.6
+rho = xp.linspace(0, 0.3, 150)
 eta = 0
 
-Ntraj = 1024
-Tf = 5000
+Ntraj = 8192
+Tf = 20000
 threshold = 4
 TwoStepIntegration = True
 Tmid = 1000
@@ -23,9 +23,9 @@ init = 'random'
 modulo = False
 grid = False
 
-SaveData = True
+SaveData = False
 PlotResults = False
-Parallelization = (True, 34)
+Parallelization = (True, 50)
 
 dpi = 300
 darkmode = True
