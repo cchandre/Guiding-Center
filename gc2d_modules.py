@@ -59,7 +59,7 @@ def run_method(case):
 	filestr += '_' + case.Method
 	if case.Method == 'potentials' and case.Potential == 'turbulent':
 		start = time.time()
-		plt.rcParams.update({'figure.figsize': [8 * (case.GCorder +1), 8]})
+		plt.rcParams.update({'figure.figsize': [14, 7 * case.GCorder]})
 		data = xp.array([case.phi, case.phi_gc1_1, case.phi_gc2_0, case.phi_gc2_2])
 		save_data(case, data, filestr)
 		time_range = xp.linspace(0, 2 * xp.pi, 50)
@@ -70,13 +70,24 @@ def run_method(case):
 		vmin, vmax = min(min_phi, min_phi_gc1), max(max_phi, max_phi_gc1)
 		extent = (0, 2 * xp.pi, 0, 2 * xp.pi)
 		divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
-		fig, axs = plt.subplots(1, case.GCorder+1)
+		fig, axs = plt.subplots(case.GCorder, 2)
 		ims = []
 		for t in time_range:
-			im = [axs[i].imshow((data[i] * xp.exp(-1j * t)).imag, origin='lower', extent=extent, animated=True, norm=divnorm) for i in range(2)]
+			frame_ul = (data[0] * xp.exp(-1j * t)).imag
+			frame_ll = (data[1] * xp.exp(-1j * t)).imag
+			frame_lr = (data[2] - data[3] * xp.exp(-2j * t)).real
+			frame_ur = frame_ll + frame_lr
+			if case.GCorder == 1:
+				im = [axs[0].imshow(frame_ul, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1].imshow(frame_ur, origin='lower', extent=extent, animated=True, norm=divnorm)]
+				axs[0].set_title(r'$\phi$')
+				axs[1].set_title(r'$\psi$')
 			if case.GCorder == 2:
-				im.append(axs[2].imshow((data[2] - data[3] * xp.exp(-2j * t)).real, origin='lower', extent=extent, animated=True, norm=divnorm))
-			for ax in axs:
+				im = [axs[0, 0].imshow(frame_ul, origin='lower', extent=extent, animated=True, norm=divnorm), axs[0, 1].imshow(frame_ur, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1, 0].imshow(frame_ll, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1, 1].imshow(frame_lr, origin='lower', extent=extent, animated=True, norm=divnorm)]
+				axs[0, 0].set_title(r'$\phi$')
+				axs[0, 1].set_title(r'$\psi$')
+				axs[1, 0].set_title(r'$\phi^{(1)}$')
+				axs[1, 1].set_title(r'$\phi^{(2)}$')
+			for ax in axs.flat:
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				ax.set_xticks([0, xp.pi, 2 * xp.pi])
@@ -84,12 +95,12 @@ def run_method(case):
 				ax.grid(case.grid)
 				ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 				ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
-			axs[0].set_title(r'$\phi$')
-			axs[1].set_title(r'$\langle \phi \rangle$')
-			if case.GCorder == 2:
-				axs[2].set_title(r'$-\frac{\eta}{\rho}\frac{\partial}{\partial \rho} \left(\langle \phi^2\rangle -\langle \phi\rangle^2 \right)$')
 			ims.append(im)
-		fig.colorbar(im[case.GCorder], ax=axs.ravel().tolist())
+		if case.GCorder == 1:
+			fig.colorbar(im[1], ax=axs.ravel().tolist())
+		elif case.GCorder == 2:
+			fig.colorbar(im[1], ax=axs[0, :].ravel().tolist())
+			fig.colorbar(im[3], ax=axs[1, :].ravel().tolist())
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		print('\033[90m        Animation saved in {}.gif \033[00m'.format(filestr))
