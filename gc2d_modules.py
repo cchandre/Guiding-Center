@@ -175,7 +175,7 @@ def run_method(case):
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
 				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
-				vec_data = [case.A, case.rho, case.eta, trapped, *popt, R2]
+				vec_data = [case.A, case.rho, case.eta, trapped / case.Ntraj, *popt, R2]
 				file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 				if os.path.getsize(file.name) == 0:
 					file.writelines('%  diffusion law: r^2 = (a t)^b \n')
