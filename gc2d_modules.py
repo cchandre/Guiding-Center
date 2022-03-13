@@ -160,7 +160,7 @@ def run_method(case):
 				plt.pause(0.5)
 		if case.Method == 'diffusion':
 			if untrapped.sum() <= 5:
-				print('\033[33m          Warning: not enough untrapped trajectories ({})'.format(untrapped.sum()))
+				print('\033[33m          Warning: not enough untrapped trajectories ({}) \033[00m'.format(untrapped.sum()))
 			else:
 				r2 = xp.zeros(case.Tf)
 				for t in range(case.Tf):
