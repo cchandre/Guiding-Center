@@ -2,4 +2,4 @@
 *.mat
 data_analysis.m
 *.pyc
-*.txt
+.DS_Store
