@@ -14,7 +14,7 @@ or
 ```sh
 nohup python3 -u gc2d.py &>gc2d.out < /dev/null &
 ```
-
+The list of Python packages and their version are specified in [`requirements.txt`](https://github.com/cchandre/Guiding-Center/blob/main/requirements.txt)
 ___
 ##  Parameter dictionary
 
