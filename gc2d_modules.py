@@ -182,7 +182,7 @@ def run_method(case):
 					file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
 				file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 				file.close()
-				save_data(case, xp.array([t, r2, r2_fit, x_un, y_un, x_tr, y_tr], dtype=object), filestr, info='t / r2 / r2_fit / x_untrapped / y_untrapped / x_trapped / y_trapped')
+				save_data(case, xp.array([x_un, y_un, x_tr, y_tr, t, r2, r2_fit], dtype=object), filestr, info='x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2 / r2_fit')
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
