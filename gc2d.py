@@ -69,7 +69,6 @@ class GC2Dt:
 		xp.random.seed(27)
 		phases = 2 * xp.pi * xp.random.random((self.M, self.M))
 		n = xp.meshgrid(xp.arange(1, self.M+1), xp.arange(1, self.M+1), indexing='ij')
-		self.xv = xp.linspace(0, 2 * xp.pi, self.N, endpoint=False, dtype=xp.float64)
 		self.xy_ = 2 * (xp.linspace(0, 2 * xp.pi, self.N+1, dtype=xp.float64),)
 		nm = xp.meshgrid(fftfreq(self.N, d=1/self.N), fftfreq(self.N, d=1/self.N), indexing='ij')
 		sqrt_nm = xp.sqrt(nm[0]**2 + nm[1]**2)
