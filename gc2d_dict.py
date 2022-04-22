@@ -5,13 +5,13 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'diffusion'
+Method = 'potentials'
 
 FLR = ('all', 'all')
 
 A = 0.75
-rho = xp.linspace(0, 0.3, 150)
-eta = 0
+rho = 0.1
+eta = 0.1
 
 Ntraj = 8192
 Tf = 20000
@@ -24,8 +24,8 @@ modulo = False
 grid = False
 
 SaveData = False
-PlotResults = False
-Parallelization = (True, 50)
+PlotResults = True
+Parallelization = (False, 50)
 
 dpi = 300
 darkmode = True

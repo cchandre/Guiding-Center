@@ -85,8 +85,8 @@ def run_method(case):
 				im = [axs[0, 0].imshow(frame_ul, origin='lower', extent=extent, animated=True, norm=divnorm), axs[0, 1].imshow(frame_ur, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1, 0].imshow(frame_ll, origin='lower', extent=extent, animated=True, norm=divnorm), axs[1, 1].imshow(frame_lr, origin='lower', extent=extent, animated=True, norm=divnorm)]
 				axs[0, 0].set_title(r'$\phi$')
 				axs[0, 1].set_title(r'$\psi$')
-				axs[1, 0].set_title(r'$\phi^{(1)}$')
-				axs[1, 1].set_title(r'$\phi^{(2)}$')
+				axs[1, 0].set_title(r'$\psi^{(1)}$')
+				axs[1, 1].set_title(r'$\psi^{(2)}$')
 			for ax in axs.flat:
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
