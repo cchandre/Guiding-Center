@@ -44,19 +44,11 @@ else:
 val_params = xp.meshgrid(A, rho, eta, indexing='ij')
 num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
-for _ in range(num_dict):
-	dict_list[_].update({
+for _, dict in enumerate(dict_list):
+	dict.update({
 		'A': val_params[0].flatten()[_],
 		'rho': val_params[1].flatten()[_],
-		'eta': val_params[2].flatten()[_]})
-for dict in dict_list:
-	if Potential == 'KMdCN':
-		dict.update({'M': 5})
-	elif Potential == 'turbulent':
-		dict.update({
-			'M': 25,
-			'N': 2**10})
-	dict.update({
+		'eta': val_params[2].flatten()[_],
 		'FLR': FLR,
 		'GCorder': GCorder,
 		'Method': Method,
@@ -73,4 +65,9 @@ for dict in dict_list:
 		'PlotResults': PlotResults,
 		'dpi': dpi,
 		'darkmode': darkmode})
+	if Potential == 'KMdCN':
+		dict.setdefault('M', 5)
+	elif Potential == 'turbulent':
+		dict.setdefault('M', 25)
+		dict.setdefault('N', 2**10)
 ###################################################################################################
