@@ -169,8 +169,8 @@ def run_method(case):
 				func_fit = lambda t, a, b: (a * t)**b
 				popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
 				t = t_eval[:-1]
-				r2_fit = func_fit(t, *popt)
-				R2 = r2_score(r2_win, func_fit(t_win, *popt))
+				r2_fit = func_fit(t_win, *popt)
+				R2 = r2_score(r2_win, r2_fit)
 				trapped = xp.logical_not(untrapped).sum()
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
 				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
@@ -189,7 +189,7 @@ def run_method(case):
 					ax.set_ylabel('$r^2$')
 					plt.plot(t, r2, cs[1], lw=1)
 					plt.plot(t_win, r2_win, cs[2], lw=2)
-					plt.plot(t, r2_fit, cs[3], lw=2)
+					plt.plot(t_win, r2_fit, cs[3], lw=2)
 					if case.SaveData:
 						fig.savefig(filestr + '.png', dpi=case.dpi)
 						print('\033[90m        Figure saved in {}.png \033[00m'.format(filestr))
