@@ -100,6 +100,7 @@ class GC2Dt:
 		self.phi_gc2_0 = - self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
 		self.phi_gc2_2 = - self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
 		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
+		self.dphidx, self.dphidy = derivs(self.phi)
 		self.dphidx_gc1_1, self.dphidy_gc1_1 = derivs(self.phi_gc1_1)
 		self.dphidx_gc2_0, self.dphidy_gc2_0 = derivs(self.phi_gc2_0)
 		self.dphidx_gc2_2, self.dphidy_gc2_2 = derivs(self.phi_gc2_2)
@@ -118,6 +119,19 @@ class GC2Dt:
 			dphidy_2 = interpn(self.xy_, self.dphidy_gc2_2, yr)
 			dy_gc2 = xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
 			return dy_gc1 + dy_gc2
+			
+	def eqn_ions(self, t, y):
+		if self.eta == 0 or self.rho == 0:
+			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
+		r_, v_ = xp.split(y, 2)
+		vx, vy = xp.split(v_, 2)
+		r_ = (r_ % (2 * xp.pi)).transpose()
+		dphidx = interpn(self.xy_, self.dphidx, r_).flatten()
+		dphidy = interpn(self.xy_, self.dphidy, r_).flatten()
+		dvx = -self.A / self.rho * (dphidx * xp.exp(-1j * t)).imag + vy / (2 * self.eta)
+		dvy = -self.A / self.rho * (dphidy * xp.exp(-1j * t)).imag - vx / (2 * self.eta)
+		return xp.concatenate((self.rho / (2 * self.eta) * v_, dvx, dvy), axis=None)
+		
 
 class GC2Dk:
 	def __repr__(self):
