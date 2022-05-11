@@ -104,7 +104,7 @@ def run_method(case):
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
 		print('\033[90m        Animation saved in {}.gif \033[00m'.format(filestr))
-	elif case.Method in ['poincare', 'diffusion_gc', 'diffusion_ions']:
+	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
@@ -112,47 +112,56 @@ def run_method(case):
 			y_mat = xp.meshgrid(y_vec, y_vec)
 			y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
-		if case.Method == 'diffusion_ions':
+		if case.Method in ['poincare_ions', 'diffusion_ions']:
 			y0 = xp.concatenate((y0, xp.random.normal(sigma=xp.sqrt(case.Temperature), size=case.Ntraj)), axis=None)
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
-			if case.Method in ['poincare', 'diffusion_gc']:
+			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 				x, y = xp.split(sol.y, 2)
-			elif case.Method == 'diffusion_ions':
+			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				sol = solve_ivp(case.eqn_ions, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 				x, y, vx, vy = xp.split(sol.y, 4)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
 		else:
-			if case.Method in ['poincare', 'diffusion_gc']:
+			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				sol = solve_ivp(case.eqn_phi, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y = xp.split(sol.y, 2)
-			elif case.Method == 'diffusion_ions':
+			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				sol = solve_ivp(case.eqn_ions, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y, vx, vy = xp.split(sol.y, 4)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
-			if case.Method == 'diffusion_ions':
+			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[xp.logical_not(untrapped), :], vy[xp.logical_not(untrapped), :]
 			print('\033[90m        Continuing with the integration of {} untrapped particles... \033[00m'.format(untrapped.sum()))
-			if case.Method in ['poincare', 'diffusion_gc']:
+			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_phi, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y = xp.split(sol.y, 2)
-			elif case.Method == 'diffusion_ions':
-				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx[:, -1], vy[:, -1]), axis=None)
+			elif case.Method in ['poincare_ions', 'diffusion_ions']:
+				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx_un[:, -1], vy_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_ions, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y, vx, vy = xp.split(sol.y, 4)
 			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
+			if case.Method in ['poincare_ions', 'diffusion_ions']:
+				vx_un = xp.concatenate((vx_un, vx[:, 1:]), axis=1)
+				vy_un = xp.concatenate((vy_un, vy[:, 1:]), axis=1)
 		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		if case.Method == 'poincare':
-			save_data(case, xp.array([x_un, y_un, x_tr, y_tr], dtype=object), filestr, info='x_untrapped / y_untrapped / x_trapped / y_trapped')
+		if case.Method in ['poincare_gc', 'poincare_ions']:
+			if case.Method == 'poincare_gc':
+				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
+				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
+			elif case.Method == 'poincare_ions':
+				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr], dtype=object)
+				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped'
+			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
@@ -200,7 +209,13 @@ def run_method(case):
 					file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
 				file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 				file.close()
-				save_data(case, xp.array([x_un, y_un, x_tr, y_tr, t, r2, r2_fit], dtype=object), filestr, info='x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2 / r2_fit')
+				if case.Method == 'poincare_gc':
+					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2, r2_fit], dtype=object)
+					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2 / r2_fit'
+				elif case.Method == 'poincare_ions':
+					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, t, r2, r2_fit], dtype=object)
+					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / t / r2 / r2_fit'
+				save_data(case, data, filestr, info=info)
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
 					ax.set_xlabel('$t$')
