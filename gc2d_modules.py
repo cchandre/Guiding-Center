@@ -126,6 +126,9 @@ def run_method(case):
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
+			if case.Method in ['poincare_ions', 'diffusion_ions']:
+				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
+				vx_tr, vy_tr = vx[xp.logical_not(untrapped), :], vy[xp.logical_not(untrapped), :]
 		else:
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				sol = solve_ivp(case.eqn_phi, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
