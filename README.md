@@ -19,7 +19,11 @@ ___
 ##  Parameter dictionary
 
 - *Potential*: string; 'KMdCN' or 'turbulent' 
-- *Method*: string; 'potentials' (only for Potential='turbulent'), 'diffusion', 'poincare'
+- *Method*: string
+  - 'potentials' (only for Potential='turbulent'): plots the electrostatic potential as well as the first and second order guiding-center potentials
+  - 'diffusion_ions': computes the diffusion coefficient for the ions
+  - 'diffusion_gc': computes the diffusion coefficient for the guiding-center trajectories 
+  - 'poincare': plots the guiding-center trajectories every period of the potentiel (stroboscopic plot)
 ####
 - *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
 - *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
