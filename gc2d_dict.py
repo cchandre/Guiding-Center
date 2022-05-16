@@ -5,16 +5,16 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'potentials'
+Method = 'diffusion_ions'
 
 FLR = ('all', 'all')
 
-A = 0.75
-rho = 0.1
-eta = 0.1
+A = 0.7
+rho = 0.25
+eta = 0.05
 
-Ntraj = 8192
-Tf = 20000
+Ntraj = 1024
+Tf = 5000
 threshold = 4
 TwoStepIntegration = True
 Tmid = 1000
