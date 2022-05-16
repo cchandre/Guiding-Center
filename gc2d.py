@@ -81,24 +81,24 @@ class GC2Dt:
 			flr1_coeff = jv(0, self.rho * sqrt_nm)
 		elif isinstance(self.FLR[0], int):
 			x = sp.Symbol('x')
-			flr_expansion = sp.besselj(0, x).series(x, 0, self.FLR[0]+1).removeO()
+			flr_expansion = sp.besselj(0, x).series(x, 0, self.FLR[0] + 1).removeO()
 			flr_func = sp.lambdify(x, flr_expansion)
 			flr1_coeff = flr_func(self.rho * sqrt_nm)
 		fft_phi_gc1_1 = flr1_coeff * fft_phi
 		self.phi = ifft2(fft_phi) * (self.N**2)
 		self.phi_gc1_1 = ifft2(fft_phi_gc1_1) * (self.N**2)
 		if (self.FLR[1] == 'none') or (self.FLR[1] in range(3)) or (self.rho == 0):
-			flr2_coeff = - sqrt_nm**2 / 2
+			flr2_coeff = -sqrt_nm**2 / 2
 		else:
 			if self.FLR[1] == 'all':
-				flr2_coeff = - sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
+				flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
 			elif isinstance(self.FLR[1], int):
 				x = sp.Symbol('x')
-				flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1]+1).removeO()
-				flr2_coeff = - sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
+				flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
+				flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
 		self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-		self.phi_gc2_0 = - self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
-		self.phi_gc2_2 = - self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
+		self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
+		self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
 		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
 		self.dphidx, self.dphidy = derivs(self.phi)
 		self.dphidx_gc1_1, self.dphidy_gc1_1 = derivs(self.phi_gc1_1)
@@ -128,8 +128,8 @@ class GC2Dt:
 		r_ = (r_ % (2 * xp.pi)).transpose()
 		dphidx = interpn(self.xy_, self.dphidx, r_).flatten()
 		dphidy = interpn(self.xy_, self.dphidy, r_).flatten()
-		dvx = -self.A / self.rho * (dphidx * xp.exp(-1j * t)).imag + vy / (2 * self.eta)
-		dvy = -self.A / self.rho * (dphidy * xp.exp(-1j * t)).imag - vx / (2 * self.eta)
+		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho + vy / (2 * self.eta)
+		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * self.eta) * v_, dvx, dvy), axis=None)
 		
 
@@ -157,32 +157,48 @@ class GC2Dk:
 			flr2_coeff20, flr2_coeff22 = 0, -1
 		else:
 			if self.FLR[1] == 'all':
-				flr2_coeff20 = - 2 * (jv(1, self.rho * 2) - xp.sqrt(2) *  jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
-				flr2_coeff22 = - xp.sqrt(2) * (jv(1, self.rho * 2 * xp.sqrt(2)) - jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
+				flr2_coeff20 = -2 * (jv(1, self.rho * 2) - xp.sqrt(2) *  jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
+				flr2_coeff22 = -xp.sqrt(2) * (jv(1, self.rho * 2 * xp.sqrt(2)) - jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
 			elif isinstance(self.FLR[1], int):
 				x = sp.Symbol('x')
-				flr2_exp20 = - 2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.FLR[1] + 1).removeO()
-				flr2_exp22 = - sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.FLR[1] + 1).removeO()
+				flr2_exp20 = -2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.FLR[1] + 1).removeO()
+				flr2_exp22 = -sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.FLR[1] + 1).removeO()
 				flr2_coeff20 = sp.lambdify(x, flr2_exp20)(self.rho)
 				flr2_coeff22 = sp.lambdify(x, flr2_exp22)(self.rho)
-		self.A20 = - (self.A**2) * self.eta * flr2_coeff20
-		self.A22 = - (self.A**2) * self.eta * flr2_coeff22
+		self.A20 = -(self.A**2) * self.eta * flr2_coeff20
+		self.A22 = -(self.A**2) * self.eta * flr2_coeff22
+		
+	def compute_coeffs(self, t):
+		cheby_coeff = eval_chebyu(self.M-1, xp.cos(t))
+		alpha = 0.5 + (xp.cos((self.M+1) * t) + xp.cos(self.M * t)) * cheby_coeff
+		beta = 0.5 + (xp.cos((self.M+1) * t) - xp.cos(self.M * t)) * cheby_coeff
+		return alpha, beta
 
 	def eqn_phi(self, t, y):
-		x = xp.split(y, 2)
-		cheby_coeff = eval_chebyu(self.M-1, xp.cos(t))
-		alpha_b = 0.5 + (xp.cos((self.M+1) * t) + xp.cos(self.M * t)) * cheby_coeff
-		beta_b = 0.5 + (xp.cos((self.M+1) * t) - xp.cos(self.M * t)) * cheby_coeff
-		smxy, spxy = xp.sin(x[0] - x[1]), xp.sin(x[0] + x[1])
-		dy_gc1 = self.A1 * xp.concatenate((- alpha_b * smxy + beta_b * spxy, - alpha_b * smxy - beta_b * spxy), axis=None)
+		x_, y_ = xp.split(y, 2)
+		alpha, beta = self.compute_coeffs(t)
+		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)
+		dy_gc1 = self.A1 * xp.concatenate((-alpha * smxy + beta * spxy, -alpha * smxy - beta * spxy), axis=None)
 		if self.GCorder == 1:
 			return dy_gc1
 		elif self.GCorder == 2:
-			v20 = xp.split(self.A20 * alpha_b * beta_b * xp.sin(2 * y), 2)
-			v2m2 = self.A22 * (alpha_b**2) * xp.sin(2 * (x[0] - x[1]))
-			v2p2 = self.A22 * (beta_b**2) * xp.sin(2 * (x[0] + x[1]))
-			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, - v20[0] - v2p2 - v2m2), axis=None)
+			v20 = xp.split(self.A20 * alpha * beta * xp.sin(2 * y), 2)
+			v2m2 = self.A22 * (alpha**2) * xp.sin(2 * (x_ - y_))
+			v2p2 = self.A22 * (beta**2) * xp.sin(2 * (x_ + y_))
+			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, -v20[0] - v2p2 - v2m2), axis=None)
 			return dy_gc1 + dy_gc2
+			
+	def eqn_ions(self, t, y):
+		if self.eta == 0 or self.rho == 0:
+			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
+		x_, y_, vx, vy = xp.split(y, 4)
+		alpha, beta = self.compute_coeffs(t)
+		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)
+		dphidx = -alpha * smxy - beta * spxy
+		dphidy = alpha * smxy - beta * spxy
+		dvx = -self.A * dphidx / self.rho + vy / (2 * self.eta)
+		dvy = -self.A * dphidy / self.rho - vx / (2 * self.eta)
+		return xp.concatenate((self.rho / (2 * self.eta) * vx, self.rho / (2 * self.eta) * vy, dvx, dvy), axis=None)
 
 if __name__ == "__main__":
 	main()
