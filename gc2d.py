@@ -119,7 +119,7 @@ class GC2Dt:
 			dphidy_2 = interpn(self.xy_, self.dphidy_gc2_2, yr)
 			dy_gc2 = xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
 			return dy_gc1 + dy_gc2
-			
+
 	def eqn_ions(self, t, y):
 		if self.eta == 0 or self.rho == 0:
 			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
@@ -128,10 +128,10 @@ class GC2Dt:
 		r_ = (r_ % (2 * xp.pi)).transpose()
 		dphidx = interpn(self.xy_, self.dphidx, r_).flatten()
 		dphidy = interpn(self.xy_, self.dphidy, r_).flatten()
-		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho + vy / (2 * self.eta)
-		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho - vx / (2 * self.eta)
-		return xp.concatenate((self.rho / (2 * self.eta) * v_, dvx, dvy), axis=None)
-		
+		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
+		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
+		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
+
 
 class GC2Dk:
 	def __repr__(self):
@@ -167,7 +167,7 @@ class GC2Dk:
 				flr2_coeff22 = sp.lambdify(x, flr2_exp22)(self.rho)
 		self.A20 = -(self.A**2) * self.eta * flr2_coeff20
 		self.A22 = -(self.A**2) * self.eta * flr2_coeff22
-		
+
 	def compute_coeffs(self, t):
 		cheby_coeff = eval_chebyu(self.M-1, xp.cos(t))
 		alpha = 0.5 + (xp.cos((self.M+1) * t) + xp.cos(self.M * t)) * cheby_coeff
@@ -187,7 +187,7 @@ class GC2Dk:
 			v2p2 = self.A22 * (beta**2) * xp.sin(2 * (x_ + y_))
 			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, -v20[0] - v2p2 - v2m2), axis=None)
 			return dy_gc1 + dy_gc2
-			
+
 	def eqn_ions(self, t, y):
 		if self.eta == 0 or self.rho == 0:
 			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
@@ -196,9 +196,9 @@ class GC2Dk:
 		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)
 		dphidx = -alpha * smxy - beta * spxy
 		dphidy = alpha * smxy - beta * spxy
-		dvx = -self.A * dphidx / self.rho + vy / (2 * self.eta)
-		dvy = -self.A * dphidy / self.rho - vx / (2 * self.eta)
-		return xp.concatenate((self.rho / (2 * self.eta) * vx, self.rho / (2 * self.eta) * vy, dvx, dvy), axis=None)
+		dvx = -self.A * dphidx / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
+		dvy = -self.A * dphidy / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
+		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 
 if __name__ == "__main__":
 	main()
