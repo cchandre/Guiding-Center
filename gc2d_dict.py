@@ -5,7 +5,7 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'diffusion_ions'
+Method = 'poincare_ions'
 
 FLR = ('all', 'all')
 
@@ -13,8 +13,8 @@ A = 0.7
 rho = 0.25
 eta = 0.05
 
-Ntraj = 1024
-Tf = 5000
+Ntraj = 100
+Tf = 4000
 threshold = 4
 TwoStepIntegration = True
 Tmid = 1000

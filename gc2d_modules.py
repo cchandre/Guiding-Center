@@ -113,7 +113,11 @@ def run_method(case):
 			y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
 		if case.Method in ['poincare_ions', 'diffusion_ions']:
-			y0 = xp.concatenate((y0, xp.random.normal(scale=xp.sqrt(case.Temperature), size=case.Ntraj)), axis=None)
+			v_perp = xp.random.normal(scale=xp.sqrt(case.Temperature), size=case.Ntraj)
+			phi_perp = 2 * xp.pi * xp.random.rand(case.Ntraj)
+			vx = v_perp * xp.cos(phi_perp)
+			vy = v_perp * xp.sin(phi_perp)
+			y0 = xp.concatenate((y0, vx, vy), axis=None)
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
@@ -212,10 +216,10 @@ def run_method(case):
 					file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
 				file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 				file.close()
-				if case.Method == 'poincare_gc':
+				if case.Method == 'diffusion_gc':
 					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2, r2_fit], dtype=object)
 					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2 / r2_fit'
-				elif case.Method == 'poincare_ions':
+				elif case.Method == 'diffusion_ions':
 					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, t, r2, r2_fit], dtype=object)
 					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / t / r2 / r2_fit'
 				save_data(case, data, filestr, info=info)
