@@ -5,7 +5,7 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare_ions'
+Method = 'poincare_gc'
 
 FLR = ('all', 'all')
 
@@ -14,12 +14,12 @@ rho = 0.25
 eta = 0.05
 
 Ntraj = 100
-Tf = 4000
+Tf = 1000
 threshold = 4
-TwoStepIntegration = True
+TwoStepIntegration = False
 Tmid = 1000
 TimeStep = 0.05
-init = 'random'
+init = 'fixed'
 Temperature = 1
 modulo = False
 grid = False
@@ -47,6 +47,8 @@ num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
 if Temperature not in locals():
 	Temperature = 1
+if Tmid >= Tf:
+	Tmid = Tf / 2
 for _, dict in enumerate(dict_list):
 	dict.update({
 		'A': val_params[0].flatten()[_],

@@ -100,23 +100,21 @@ class GC2Dt:
 		self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
 		self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
 		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
-		self.dphidx, self.dphidy = derivs(self.phi)
-		self.dphidx_gc1_1, self.dphidy_gc1_1 = derivs(self.phi_gc1_1)
-		self.dphidx_gc2_0, self.dphidy_gc2_0 = derivs(self.phi_gc2_0)
-		self.dphidx_gc2_2, self.dphidy_gc2_2 = derivs(self.phi_gc2_2)
+		self.Dphi = xp.moveaxis(xp.stack(derivs(self.phi)), 0, -1)
+		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
+		self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
 
 	def eqn_phi(self, t, y):
 		yr = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
-		dphidx = interpn(self.xy_, self.dphidx_gc1_1, yr)
-		dphidy = interpn(self.xy_, self.dphidy_gc1_1, yr)
-		dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 		if self.GCorder == 1:
+			Dphi = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, yr), 0, 1)
+			dphidx, dphidy = [Dphi[_] for _ in range(2)]
+			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 			return dy_gc1
 		elif self.GCorder == 2:
-			dphidx_0 = interpn(self.xy_, self.dphidx_gc2_0, yr)
-			dphidy_0 = interpn(self.xy_, self.dphidy_gc2_0, yr)
-			dphidx_2 = interpn(self.xy_, self.dphidx_gc2_2, yr)
-			dphidy_2 = interpn(self.xy_, self.dphidy_gc2_2, yr)
+			Dphi = xp.moveaxis(interpn(self.xy_, self.Dphi_gc2, yr), 0, 1)
+			dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = [Dphi[_] for _ in range(6)]
+			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 			dy_gc2 = xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
 			return dy_gc1 + dy_gc2
 
@@ -126,8 +124,8 @@ class GC2Dt:
 		r_, v_ = xp.split(y, 2)
 		vx, vy = xp.split(v_, 2)
 		r_ = (r_ % (2 * xp.pi)).transpose()
-		dphidx = interpn(self.xy_, self.dphidx, r_).flatten()
-		dphidy = interpn(self.xy_, self.dphidy, r_).flatten()
+		Dphi = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
+		dphidx, dphidy = [Dphi[_].flatten() for _ in range(2)]
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
