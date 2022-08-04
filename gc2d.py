@@ -169,7 +169,7 @@ class GC2Dk:
 		beta = 0.5 + (xp.cos((self.M+1) * t) - xp.cos(self.M * t)) * cheby_coeff
 		return alpha, beta
 
-	def eqn_phi(self, t, y):
+	def eqn_gc(self, t, y):
 		x_, y_ = xp.split(y, 2)
 		alpha, beta = self.compute_coeffs(t)
 		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)

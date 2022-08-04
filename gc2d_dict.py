@@ -13,7 +13,7 @@ A = 0.7
 rho = 0.25
 eta = 0.05
 
-Ntraj = 100
+Ntraj = 300
 Tf = 1000
 threshold = 4
 TwoStepIntegration = False
