@@ -100,7 +100,7 @@ class GC2Dt:
 		self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
 		self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
 		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
-		self.Dphi = xp.moveaxis(xp.stack(derivs(self.phi)), 0, -1)
+		self.Dphi_ions = xp.moveaxis(xp.stack(derivs(self.phi)), 0, -1)
 		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
 		self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
 
@@ -122,7 +122,7 @@ class GC2Dt:
 		r_, v_ = xp.split(y, 2)
 		vx, vy = xp.split(v_, 2)
 		r_ = (r_ % (2 * xp.pi)).transpose()
-		dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
+		dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
