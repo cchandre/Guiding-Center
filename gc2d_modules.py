@@ -122,7 +122,7 @@ def run_method(case):
 		start = time.time()
 		if not case.TwoStepIntegration:
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
-				sol = solve_ivp(case.eqn_phi, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
+				sol = solve_ivp(case.eqn_gc, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 				x, y = xp.split(sol.y, 2)
 			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				sol = solve_ivp(case.eqn_ions, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
@@ -135,7 +135,7 @@ def run_method(case):
 				vx_tr, vy_tr = vx[xp.logical_not(untrapped), :], vy[xp.logical_not(untrapped), :]
 		else:
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
-				sol = solve_ivp(case.eqn_phi, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
+				sol = solve_ivp(case.eqn_gc, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y = xp.split(sol.y, 2)
 			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				sol = solve_ivp(case.eqn_ions, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
@@ -149,7 +149,7 @@ def run_method(case):
 			print('\033[90m        Continuing with the integration of {} untrapped particles... \033[00m'.format(untrapped.sum()))
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
-				sol = solve_ivp(case.eqn_phi, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
+				sol = solve_ivp(case.eqn_gc, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y = xp.split(sol.y, 2)
 			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx_un[:, -1], vy_un[:, -1]), axis=None)
