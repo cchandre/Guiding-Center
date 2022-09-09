@@ -105,13 +105,13 @@ class GC2Dt:
 		self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
 
 	def eqn_gc(self, t, y):
-		yr = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
+		r_ = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
 		if self.GCorder == 1:
-			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, yr), 0, 1)
+			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, r_), 0, 1)
 			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 			return dy_gc1
 		elif self.GCorder == 2:
-			dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = xp.moveaxis(interpn(self.xy_, self.Dphi_gc2, yr), 0, 1)
+			dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = xp.moveaxis(interpn(self.xy_, self.Dphi_gc2, r_), 0, 1)
 			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 			dy_gc2 = xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
 			return dy_gc1 + dy_gc2
@@ -121,7 +121,7 @@ class GC2Dt:
 			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
 		r_, v_ = xp.split(y, 2)
 		vx, vy = xp.split(v_, 2)
-		r_ = (r_ % (2 * xp.pi)).transpose()
+		r_ = xp.array(xp.split(r_, 2)).transpose() % (2 * xp.pi)
 		dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
