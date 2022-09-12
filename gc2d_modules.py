@@ -32,6 +32,7 @@ from matplotlib import colors
 from matplotlib.patches import Rectangle
 from scipy.integrate import solve_ivp
 from scipy.optimize import curve_fit
+from scipy.stats import linregress
 from sklearn.metrics import r2_score
 from scipy.io import savemat
 import time
@@ -202,26 +203,27 @@ def run_method(case):
 				t_win, r2_win = t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
 				func_fit = lambda t, a, b: (a * t)**b
 				popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
+				res = linregress(t_win, r2_win)
 				t = t_eval[:-1]
 				r2_fit = func_fit(t_win, *popt)
 				R2 = r2_score(r2_win, r2_fit)
 				trapped = xp.logical_not(untrapped).sum()
 				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
-				print('\033[96m          diffusion data    = [' + ', '.join(['{:.6f}'.format(p) for p in popt]) + ']\033[00m')
-				print('\033[96m              with an R2    = {:.6f} \033[00m'.format(R2))
-				vec_data = [case.A, case.rho, case.eta, trapped / case.Ntraj, *popt, R2]
+				print('\033[96m          diffusion data : D = {:.6f}  /  interp = '.format(res.slope) + ', '.join(['{:.6f}'.format(p) for p in popt]) + '\033[00m')
+				print('\033[96m              with R2        = {:.6f}  /  {:.6f} \033[00m'.format(res.rvalue**2, R2))
+				vec_data = [case.A, case.rho, case.eta, trapped / case.Ntraj, res.slope, *popt, res.rvalue**2, R2]
 				file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 				if os.path.getsize(file.name) == 0:
-					file.writelines('%  diffusion law: r^2 = (a t)^b \n')
-					file.writelines('%  A        rho      eta    trapped    a        b        R2' + '\n')
+					file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
+					file.writelines('%  A        rho      eta    trapped     D       a        b     R2(diff)   R2(interp)' + '\n')
 				file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 				file.close()
 				if case.Method == 'diffusion_gc':
-					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2, r2_fit], dtype=object)
-					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2 / r2_fit'
+					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2], dtype=object)
+					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2'
 				elif case.Method == 'diffusion_ions':
-					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, t, r2, r2_fit], dtype=object)
-					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / t / r2 / r2_fit'
+					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, t, r2], dtype=object)
+					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / t / r2'
 				save_data(case, data, filestr, info=info)
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
