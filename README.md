@@ -23,8 +23,8 @@ ___
   - 'potentials' (only for Potential='turbulent'): plots the electrostatic potential as well as the first and second order guiding-center potentials
   - 'diffusion_ions': computes the diffusion coefficient for the ions
   - 'diffusion_gc': computes the diffusion coefficient for the guiding-center trajectories 
-  - 'poincare_ions': plots the trajectories of the ions in the plane (*x*, *y*) for every period of the potentiel (stroboscopic plot)
-  - 'poincare_gc': plots the guiding-center trajectories in the plane (*x*, *y*) for every period of the potentiel (stroboscopic plot)
+  - 'poincare_ions': plots the trajectories of the ions in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
+  - 'poincare_gc': plots the guiding-center trajectories in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
 ####
 - *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
 - *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
