@@ -20,7 +20,6 @@ TwoStepIntegration = False
 Tmid = 1000
 TimeStep = 0.05
 init = 'fixed'
-Temperature = 1
 modulo = False
 grid = False
 
@@ -45,8 +44,6 @@ else:
 val_params = xp.meshgrid(A, rho, eta, indexing='ij')
 num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
-if Temperature not in locals():
-	Temperature = 1
 if Tmid >= Tf:
 	Tmid = Tf / 2
 for _, dict in enumerate(dict_list):
@@ -65,7 +62,6 @@ for _, dict in enumerate(dict_list):
 		'TwoStepIntegration': TwoStepIntegration,
 		'Tmid': Tmid,
 		'init': init,
-		'Temperature': Temperature,
 		'TimeStep': TimeStep,
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,

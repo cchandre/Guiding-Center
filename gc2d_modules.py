@@ -114,11 +114,8 @@ def run_method(case):
 			y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
 		if case.Method in ['poincare_ions', 'diffusion_ions']:
-			v_perp = xp.random.normal(scale=xp.sqrt(case.Temperature), size=case.Ntraj)
 			phi_perp = 2 * xp.pi * xp.random.rand(case.Ntraj)
-			vx = v_perp * xp.cos(phi_perp)
-			vy = v_perp * xp.sin(phi_perp)
-			y0 = xp.concatenate((y0, vx, vy), axis=None)
+			y0 = xp.concatenate((y0, xp.cos(phi_perp), xp.sin(phi_perp)), axis=None)
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
