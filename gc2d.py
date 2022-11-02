@@ -128,20 +128,20 @@ class GC2Dt:
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
 
-	def ions2gc(self, y, order=1):
+	def ions2gc(self, *y, order=1):
 		if order >= 2:
 			raise ValueError('ions2gc not available at order {}'.format(order))
-		x_, y_, vx, vy = xp.split(xp.asarray(y), 4)
+		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
 		return xp.concatenate((x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)), axis=0)
 
-	def compute_mu(self, t, y, type='ions', order=0):
+	def compute_mu(self, t, *y, type='ions', order=0):
 		if order >= 2:
 			raise ValueError('compute_mu not available at order {}'.format(order))
 		if type == 'ions':
-			r_, v_ = xp.split(xp.asarray(y), 2)
-			vx, vy = xp.split(v_, 2)
+			x_, y_, vx, vy = y
+			r_ = xp.concatenate((x_, y_), axis=0)
 			mu0 = self.rho**2 * (vx**2 + vy**2) / 2
 			if order == 0:
 				return mu0
