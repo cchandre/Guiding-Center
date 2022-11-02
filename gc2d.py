@@ -134,7 +134,7 @@ class GC2Dt:
 		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
-		return xp.concatenate((x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)), axis=0)
+		return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 
 	def compute_mu(self, t, *y, type='ions', order=0):
 		if order >= 2:
