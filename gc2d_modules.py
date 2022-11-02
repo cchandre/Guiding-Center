@@ -168,8 +168,8 @@ def run_method(case):
 			elif case.Method == 'poincare_ions':
 				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un)
 				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr)
-				mu_un = case.compute(t_eval, x_un, y_un, vx_un, vy_un, order=1)
-				mu_tr = case.compute(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=1)
+				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=1)
+				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=1)
 				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
 			save_data(case, data, filestr, info=info)
@@ -227,8 +227,8 @@ def run_method(case):
 				elif case.Method == 'diffusion_ions':
 					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un)
 					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr)
-					mu_un = case.compute(t_eval, x_un, y_un, vx_un, vy_un, order=1)
-					mu_tr = case.compute(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=1)
+					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=1)
+					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=1)
 					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2], dtype=object)
 					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2'
 				save_data(case, data, filestr, info=info)
