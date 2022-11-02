@@ -131,7 +131,7 @@ class GC2Dt:
 	def ions2gc(self, y, order=1):
 		if order >= 2:
 			raise ValueError('ions2gc not available at order {}'.format(order))
-		x_, y_, vx, vy = xp.split(y, 4)
+		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
 		return xp.concatenate((x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)), axis=0)
