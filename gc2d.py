@@ -104,6 +104,7 @@ class GC2Dt:
 		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
 		self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
 
+
 	def eqn_gc(self, t, y):
 		r_ = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
 		if self.GCorder == 1:
@@ -127,6 +128,28 @@ class GC2Dt:
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
 
+	def ions2gc(self, y, order=1):
+		if order >= 2:
+			raise ValueError('ions2gc not available at order {}'.format(order))
+		x_, y_, vx, vy = xp.split(y, 4)
+		v = vy + 1j * vx
+		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
+		return xp.concatenate((x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)), axis=0)
+
+	def compute_mu(self, t, y, type='ions', order=0):
+		if order >= 2:
+			raise ValueError('compute_mu not available at order {}'.format(order))
+		if type == 'ions':
+			r_, v_ = xp.split(y, 2)
+			vx, vy = xp.split(v_, 2)
+			mu0 = self.rho**2 * (vx**2 + vy**2) / 2
+			if order == 0:
+				return mu0
+			elif order == 1:
+				phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
+				mu1 = mu0 + 2 * self.A * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+		elif type == 'gc':
+			return self.rho**2 / 2
 
 class GC2Dk:
 	def __repr__(self):

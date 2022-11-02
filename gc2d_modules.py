@@ -126,11 +126,12 @@ def run_method(case):
 				sol = solve_ivp(case.eqn_ions, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 				x, y, vx, vy = xp.split(sol.y, 4)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
-			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
+			x_tr, y_tr = x[trapped, :], y[trapped, :]
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
-				vx_tr, vy_tr = vx[xp.logical_not(untrapped), :], vy[xp.logical_not(untrapped), :]
+				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
 		else:
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				sol = solve_ivp(case.eqn_gc, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
@@ -139,11 +140,12 @@ def run_method(case):
 				sol = solve_ivp(case.eqn_ions, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
 				x, y, vx, vy = xp.split(sol.y, 4)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
-			x_tr, y_tr = x[xp.logical_not(untrapped), :], y[xp.logical_not(untrapped), :]
+			x_tr, y_tr = x[trapped, :], y[trapped, :]
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
-				vx_tr, vy_tr = vx[xp.logical_not(untrapped), :], vy[xp.logical_not(untrapped), :]
+				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
 			print('\033[90m        Continuing with the integration of {} untrapped particles... \033[00m'.format(untrapped.sum()))
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
@@ -164,8 +166,12 @@ def run_method(case):
 				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
 			elif case.Method == 'poincare_ions':
-				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr], dtype=object)
-				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped'
+				x_gc_un, y_gc_un = case.ions2gc((x_un, y_un, vx_un, vy_un))
+				x_gc_tr, y_gc_tr = case.ions2gc((x_tr, y_tr, vx_tr, vy_tr))
+				mu_un = case.compute(t_eval, (x_un, y_un, vx_un, vy_un))
+				mu_tr = case.compute(t_eval, (x_tr, y_tr, vx_tr, vy_tr))
+				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
+				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
 			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
@@ -204,11 +210,11 @@ def run_method(case):
 				t = t_eval[:-1]
 				r2_fit = func_fit(t_win, *popt)
 				R2 = r2_score(r2_win, r2_fit)
-				trapped = xp.logical_not(untrapped).sum()
-				print('\033[96m          trapped particles = {} \033[00m'.format(trapped))
+				n_trapped = xp.logical_not(untrapped).sum()
+				print('\033[96m          trapped particles = {} \033[00m'.format(n_trapped))
 				print('\033[96m          diffusion data : D = {:.6f}  /  interp = '.format(res.slope) + ', '.join(['{:.6f}'.format(p) for p in popt]) + '\033[00m')
 				print('\033[96m              with R2        = {:.6f}  /  {:.6f} \033[00m'.format(res.rvalue**2, R2))
-				vec_data = [case.A, case.rho, case.eta, trapped / case.Ntraj, res.slope, *popt, res.rvalue**2, R2]
+				vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, res.slope, *popt, res.rvalue**2, R2]
 				file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 				if os.path.getsize(file.name) == 0:
 					file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
@@ -219,8 +225,12 @@ def run_method(case):
 					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2], dtype=object)
 					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2'
 				elif case.Method == 'diffusion_ions':
-					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, t, r2], dtype=object)
-					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / t / r2'
+					x_gc_un, y_gc_un = case.ions2gc((x_un, y_un, vx_un, vy_un))
+					x_gc_tr, y_gc_tr = case.ions2gc((x_tr, y_tr, vx_tr, vy_tr))
+					mu_un = case.compute(t_eval, (x_un, y_un, vx_un, vy_un))
+					mu_tr = case.compute(t_eval, (x_tr, y_tr, vx_tr, vy_tr))
+					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2], dtype=object)
+					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2'
 				save_data(case, data, filestr, info=info)
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
