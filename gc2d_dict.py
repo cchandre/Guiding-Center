@@ -5,7 +5,7 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare_ions'
+Method = 'poincare_gc'
 
 FLR = ('all', 'all')
 
@@ -13,8 +13,8 @@ A = 0.7
 rho = 0.25
 eta = 0.05
 
-Ntraj = 300
-Tf = 1000
+Ntraj = 100
+Tf = 100
 threshold = 4
 TwoStepIntegration = False
 Tmid = 1000

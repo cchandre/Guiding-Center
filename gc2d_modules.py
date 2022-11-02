@@ -168,8 +168,8 @@ def run_method(case):
 			elif case.Method == 'poincare_ions':
 				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un)
 				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr)
-				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=1)
-				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=1)
+				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=0)
+				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=0)
 				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
 			save_data(case, data, filestr, info=info)
@@ -179,8 +179,14 @@ def run_method(case):
 				ax.set_ylabel('$y$')
 				ax.grid(case.grid)
 				if case.modulo:
-					ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[2], markersize=2, markeredgecolor='none')
-					ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[3], markersize=2, markeredgecolor='none')
+					if case.Method == 'poincare_gc':
+						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
+					elif case.Method == "poincare_ions":
+						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[2], markersize=1, markeredgecolor='none')
+						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[3], markersize=1, markeredgecolor='none')
+						ax.plot(x_gc_un % (2 * xp.pi), y_gc_un % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_gc_tr % (2 * xp.pi), y_gc_tr % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
 					ax.set_xlim(0, 2 * xp.pi)
 					ax.set_ylim(0, 2 * xp.pi)
 					ax.set_xticks([0, xp.pi, 2 * xp.pi])
@@ -188,8 +194,14 @@ def run_method(case):
 					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
 				if not case.modulo:
-					ax.plot(x_un, y_un, '.', color=cs[2], markersize=2, markeredgecolor='none')
-					ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=2, markeredgecolor='none')
+					if case.Method == 'poincare_gc':
+						ax.plot(x_un, y_un, '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=3, markeredgecolor='none')
+					elif case.Method == "poincare_ions":
+						ax.plot(x_un, y_un, '.', color=cs[2], markersize=1, markeredgecolor='none')
+						ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=1, markeredgecolor='none')
+						ax.plot(x_gc_un, y_gc_un, '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_gc_tr, y_gc_tr, '.', color=cs[3], markersize=3, markeredgecolor='none')
 					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='r', lw=2))
 					ax.set_aspect('equal')
 				if case.SaveData:
@@ -200,16 +212,7 @@ def run_method(case):
 			if untrapped.sum() <= 5:
 				print('\033[33m          Warning: not enough untrapped trajectories ({}) \033[00m'.format(untrapped.sum()))
 			else:
-				r2 = xp.zeros(case.Tf)
-				for t in range(case.Tf):
-					r2[t] = ((x_un[:, t:] - x_un[:, :-t if t else None])**2 + (y_un[:, t:] - y_un[:, :-t if t else None])**2).mean()
-				t_win, r2_win = t_eval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
-				func_fit = lambda t, a, b: (a * t)**b
-				popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
-				res = linregress(t_win, r2_win)
-				t = t_eval[:-1]
-				r2_fit = func_fit(t_win, *popt)
-				R2 = r2_score(r2_win, r2_fit)
+				t, t_win, r2, r2_win, r2_fit, slope, popt, rvalue, R2 = compute_r2(case, t_eval, x_un, y_un)
 				n_trapped = xp.logical_not(untrapped).sum()
 				print('\033[96m          trapped particles = {} \033[00m'.format(n_trapped))
 				print('\033[96m          diffusion data : D = {:.6f}  /  interp = '.format(res.slope) + ', '.join(['{:.6f}'.format(p) for p in popt]) + '\033[00m')
@@ -225,12 +228,13 @@ def run_method(case):
 					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2], dtype=object)
 					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2'
 				elif case.Method == 'diffusion_ions':
-					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un)
-					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr)
-					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=1)
-					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=1)
-					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2], dtype=object)
-					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2'
+					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=0)
+					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=0)
+					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=0)
+					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=0)
+					t, t_win, r2_gc, r2_win_gc, r2_fit_gc, slope_gc, popt_gc, rvalue_gc, R2_gc = compute_r2(case, t_eval, x_gc_un, y_gc_un)
+					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2, r2_gc], dtype=object)
+					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2 / r2_gc'
 				save_data(case, data, filestr, info=info)
 				if case.PlotResults:
 					fig, ax = plt.subplots(1, 1)
@@ -247,6 +251,19 @@ def run_method(case):
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
 	return xp.where(vec==True, *output)
+
+def compute_r2(case, teval, x, y):
+	func_fit = lambda t, a, b: (a * t)**b
+	r2 = xp.zeros(case.Tf)
+	for t in range(case.Tf):
+		r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
+	t = t_eval[:-1]
+	t_win, r2_win = teval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
+	popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
+	res = linregress(t_win, r2_win)
+	r2_fit = func_fit(t_win, *popt)
+	R2 = r2_score(r2_win, r2_fit)
+	return t, t_win, r2, r2_win, r2_fit, res.slope, popt, res.rvalue, R2
 
 def save_data(case, data, filestr, info=[]):
 	if case.SaveData:
