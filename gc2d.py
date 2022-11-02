@@ -96,14 +96,14 @@ class GC2Dt:
 				x = sp.Symbol('x')
 				flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
 				flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
-		self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-		self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
-		self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
 		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
 		self.Dphi_ions = xp.moveaxis(xp.stack(derivs(self.phi)), 0, -1)
 		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
-		self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
-
+		if self.GCorder == 2:
+			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
+			self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
+			self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
+			self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
 
 	def eqn_gc(self, t, y):
 		r_ = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
