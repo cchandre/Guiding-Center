@@ -52,8 +52,8 @@ def run_method(case):
 		plt.rc('xtick', color=cs[1], labelcolor=cs[1])
 		plt.rc('ytick', color=cs[1], labelcolor=cs[1])
 		plt.rc('image', cmap='bwr')
-	print('\033[92m    {} \033[00m'.format(case.__str__()))
-	print('\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m'.format(case.A, case.rho, case.eta))
+	print("\033[92m    {} \033[00m".format(case.__str__()))
+	print("\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m".format(case.A, case.rho, case.eta))
 	filestr = type(case).__name__ + '_' + 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
 	if case.GCorder == 2:
 		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
@@ -103,8 +103,8 @@ def run_method(case):
 			fig.colorbar(im[1], ax=axs[0, :].ravel().tolist())
 			fig.colorbar(im[3], ax=axs[1, :].ravel().tolist())
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
-		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
-		print('\033[90m        Animation saved in {}.gif \033[00m'.format(filestr))
+		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
+		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
 	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
@@ -146,7 +146,7 @@ def run_method(case):
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
-			print('\033[90m        Continuing with the integration of {} untrapped particles... \033[00m'.format(untrapped.sum()))
+			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(untrapped.sum()))
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_gc, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
@@ -160,7 +160,7 @@ def run_method(case):
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un = xp.concatenate((vx_un, vx[:, 1:]), axis=1)
 				vy_un = xp.concatenate((vy_un, vy[:, 1:]), axis=1)
-		print('\033[90m        Computation finished in {} seconds \033[00m'.format(int(time.time() - start)))
+		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		if case.Method in ['poincare_gc', 'poincare_ions']:
 			if case.Method == 'poincare_gc':
 				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
@@ -206,18 +206,18 @@ def run_method(case):
 					ax.set_aspect('equal')
 				if case.SaveData:
 					fig.savefig(filestr + '.png', dpi=case.dpi)
-					print('\033[90m        Figure saved in {}.png \033[00m'.format(filestr))
+					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
 				plt.pause(0.5)
 		if case.Method in ['diffusion_gc', 'diffusion_ions']:
 			if untrapped.sum() <= 5:
-				print('\033[33m          Warning: not enough untrapped trajectories ({}) \033[00m'.format(untrapped.sum()))
+				print("\033[33m          Warning: not enough untrapped trajectories ({}) \033[00m".format(untrapped.sum()))
 			else:
 				t, t_win, r2, r2_win, r2_fit, slope, popt, rvalue, R2 = compute_r2(case, t_eval, x_un, y_un)
 				n_trapped = xp.logical_not(untrapped).sum()
-				print('\033[96m          trapped particles = {} \033[00m'.format(n_trapped))
-				print('\033[96m          diffusion data : D = {:.6f}  /  interp = '.format(res.slope) + ', '.join(['{:.6f}'.format(p) for p in popt]) + '\033[00m')
-				print('\033[96m              with R2        = {:.6f}  /  {:.6f} \033[00m'.format(res.rvalue**2, R2))
-				vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, res.slope, *popt, res.rvalue**2, R2]
+				print("\033[96m          trapped particles = {} \033[00m".format(n_trapped))
+				print("\033[96m          diffusion data : D = {:.6f}  /  interp = '.format(res.slope) + ', '.join(['{:.6f}'.format(p) for p in popt]) + '\033[00m")
+				print("\033[96m              with R2        = {:.6f}  /  {:.6f} \033[00m".format(rvalue**2, R2))
+				vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, slope, *popt, rvalue**2, R2]
 				file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 				if os.path.getsize(file.name) == 0:
 					file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
@@ -245,7 +245,7 @@ def run_method(case):
 					plt.plot(t_win, r2_fit, cs[3], lw=2)
 					if case.SaveData:
 						fig.savefig(filestr + '.png', dpi=case.dpi)
-						print('\033[90m        Figure saved in {}.png \033[00m'.format(filestr))
+						print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
 					plt.pause(0.5)
 
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
@@ -257,7 +257,7 @@ def compute_r2(case, teval, x, y):
 	r2 = xp.zeros(case.Tf)
 	for t in range(case.Tf):
 		r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
-	t = t_eval[:-1]
+	t = teval[:-1]
 	t_win, r2_win = teval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
 	popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
 	res = linregress(t_win, r2_win)
@@ -271,4 +271,4 @@ def save_data(case, data, filestr, info=[]):
 		mdic.update({'data': data, 'info': info})
 		mdic.update({'date': date.today().strftime(" %B %d, %Y\n"), 'author': 'cristel.chandre@cnrs.fr'})
 		savemat(filestr, mdic)
-		print('\033[90m        Results saved in {}.mat \033[00m'.format(filestr))
+		print("\033[90m        Results saved in {}.mat \033[00m".format(filestr))

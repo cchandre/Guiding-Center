@@ -57,10 +57,10 @@ def main():
 
 class GC2Dt:
 	def __repr__(self):
-		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
+		return "{self.__class__.__name__}({self.DictParams})".format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}'.format(self=self)
+		return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
 
 	def __init__(self, dict):
 		for key in dict:
@@ -119,7 +119,7 @@ class GC2Dt:
 
 	def eqn_ions(self, t, y):
 		if self.eta == 0 or self.rho == 0:
-			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
+			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
 		r_, v_ = xp.split(y, 2)
 		vx, vy = xp.split(v_, 2)
 		r_ = xp.array(xp.split(r_, 2)).transpose() % (2 * xp.pi)
@@ -130,7 +130,7 @@ class GC2Dt:
 
 	def ions2gc(self, *y, order=1):
 		if order >= 2:
-			raise ValueError('ions2gc not available at order {}'.format(order))
+			raise ValueError("ions2gc not available at order {}".format(order))
 		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
@@ -138,7 +138,7 @@ class GC2Dt:
 
 	def compute_mu(self, t, *y, type='ions', order=0):
 		if order >= 2:
-			raise ValueError('compute_mu not available at order {}'.format(order))
+			raise ValueError("compute_mu not available at order {}".format(order))
 		if type == 'ions':
 			x_, y_, vx, vy = y
 			r_ = xp.concatenate((x_, y_), axis=0)
@@ -153,10 +153,10 @@ class GC2Dt:
 
 class GC2Dk:
 	def __repr__(self):
-		return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
+		return "{self.__class__.__name__}({self.DictParams})".format(self=self)
 
 	def __str__(self):
-		return '2D Guiding Center ({self.__class__.__name__}) for the KMdCN potential with FLR = {self.FLR} and GC order = {self.GCorder}'.format(self=self)
+		return "2D Guiding Center ({self.__class__.__name__}) for the KMdCN potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
 
 	def __init__(self, dict):
 		for key in dict:
@@ -208,7 +208,7 @@ class GC2Dk:
 
 	def eqn_ions(self, t, y):
 		if self.eta == 0 or self.rho == 0:
-			raise ValueError('Eta or Rho cannot be zero for eqn_ions')
+			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
 		x_, y_, vx, vy = xp.split(y, 4)
 		alpha, beta = self.compute_coeffs(t)
 		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)
