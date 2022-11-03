@@ -5,7 +5,7 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare_gc'
+Method = 'poincare_ions'
 
 FLR = ('all', 'all')
 
@@ -13,7 +13,7 @@ A = 0.7
 rho = 0.25
 eta = 0.05
 
-Ntraj = 100
+Ntraj = 10
 Tf = 100
 threshold = 4
 TwoStepIntegration = False
@@ -23,11 +23,11 @@ init = 'fixed'
 modulo = False
 grid = False
 
-SaveData = False
+SaveData = True
 PlotResults = True
-Parallelization = (False, 50)
+Parallelization = (False, 4)
 
-dpi = 300
+dpi = 800
 darkmode = True
 
 ###################################################################################################

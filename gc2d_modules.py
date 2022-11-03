@@ -166,10 +166,10 @@ def run_method(case):
 				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
 			elif case.Method == 'poincare_ions':
-				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un)
-				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr)
-				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=0)
-				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=0)
+				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=0)
+				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=0)
+				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=2)
+				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=2)
 				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
 			save_data(case, data, filestr, info=info)
@@ -230,8 +230,8 @@ def run_method(case):
 				elif case.Method == 'diffusion_ions':
 					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=0)
 					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=0)
-					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=0)
-					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=0)
+					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=2)
+					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=2)
 					t, t_win, r2_gc, r2_win_gc, r2_fit_gc, slope_gc, popt_gc, rvalue_gc, R2_gc = compute_r2(case, t_eval, x_gc_un, y_gc_un)
 					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2, r2_gc], dtype=object)
 					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2 / r2_gc'
@@ -270,5 +270,5 @@ def save_data(case, data, filestr, info=[]):
 		mdic = case.DictParams.copy()
 		mdic.update({'data': data, 'info': info})
 		mdic.update({'date': date.today().strftime(" %B %d, %Y\n"), 'author': 'cristel.chandre@cnrs.fr'})
-		savemat(filestr, mdic)
+		savemat(filestr + '.mat', mdic)
 		print("\033[90m        Results saved in {}.mat \033[00m".format(filestr))

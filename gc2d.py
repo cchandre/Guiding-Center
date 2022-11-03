@@ -128,7 +128,7 @@ class GC2Dt:
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
 
-	def ions2gc(self, *y, order=1):
+	def ions2gc(self, *y, order=0):
 		if order >= 2:
 			raise ValueError("ions2gc not available at order {}".format(order))
 		x_, y_, vx, vy = y
@@ -137,17 +137,25 @@ class GC2Dt:
 		return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 
 	def compute_mu(self, t, *y, type='ions', order=0):
-		if order >= 2:
+		if order >= 3:
 			raise ValueError("compute_mu not available at order {}".format(order))
 		if type == 'ions':
 			x_, y_, vx, vy = y
-			r_ = xp.concatenate((x_, y_), axis=0)
+			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 			mu0 = self.rho**2 * (vx**2 + vy**2) / 2
 			if order == 0:
 				return mu0
 			elif order == 1:
 				phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
-				mu1 = mu0 + 2 * self.A * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+				mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+				return mu0 + mu1
+			elif order == 2:
+				phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
+				phi_2_2 = xp.pad(self.phi * self.flr2(self.phi) - self.flr2(self.phi**2) / 2, ((0, 1),), mode='wrap')
+				phi_2_0 = xp.pad(self.flr2(xp.abs(self.phi)**2).real - (self.phi * self.flr2(self.phi.conjugate())).real, ((0, 1),), mode='wrap')
+				mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+				mu2 = 4 * self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real / 4 + interpn(self.xy_, phi_2_0, r_) / 2)
+				return mu0 + mu1 + mu2
 		elif type == 'gc':
 			return self.rho**2 / 2
 
