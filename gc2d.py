@@ -84,9 +84,8 @@ class GC2Dt:
 			flr_expansion = sp.besselj(0, x).series(x, 0, self.FLR[0] + 1).removeO()
 			flr_func = sp.lambdify(x, flr_expansion)
 			flr1_coeff = flr_func(self.rho * sqrt_nm)
-		fft_phi_gc1_1 = flr1_coeff * fft_phi
 		self.phi = ifft2(fft_phi) * (self.N**2)
-		self.phi_gc1_1 = ifft2(fft_phi_gc1_1) * (self.N**2)
+		self.phi_gc1_1 = ifft2(flr1_coeff * fft_phi) * (self.N**2)
 		if (self.FLR[1] == 'none') or (self.FLR[1] in range(3)) or (self.rho == 0):
 			flr2_coeff = -sqrt_nm**2 / 2
 		else:
@@ -136,28 +135,25 @@ class GC2Dt:
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
 		return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 
-	def compute_mu(self, t, *y, type='ions', order=0):
+	def compute_mu(self, t, *y, order=0):
 		if order >= 3:
 			raise ValueError("compute_mu not available at order {}".format(order))
-		if type == 'ions':
-			x_, y_, vx, vy = y
-			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
-			mu0 = self.rho**2 * (vx**2 + vy**2) / 2
-			if order == 0:
-				return mu0
-			elif order == 1:
-				phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
-				mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
-				return mu0 + mu1
-			elif order == 2:
-				phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
-				phi_2_2 = xp.pad(self.phi * self.flr2(self.phi) - self.flr2(self.phi**2) / 2, ((0, 1),), mode='wrap')
-				phi_2_0 = xp.pad(self.flr2(xp.abs(self.phi)**2).real - (self.phi * self.flr2(self.phi.conjugate())).real, ((0, 1),), mode='wrap')
-				mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
-				mu2 = 4 * self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real / 4 + interpn(self.xy_, phi_2_0, r_) / 2)
-				return mu0 + mu1 + mu2
-		elif type == 'gc':
-			return self.rho**2 / 2
+		x_, y_, vx, vy = y
+		r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
+		mu0 = self.rho**2 * (vx**2 + vy**2) / 2
+		if order == 0:
+			return mu0
+		elif order == 1:
+			phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
+			mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+			return mu0 + mu1
+		elif order == 2:
+			phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
+			phi_2_2 = xp.pad(self.phi * self.flr2(self.phi) - self.flr2(self.phi**2) / 2, ((0, 1),), mode='wrap')
+			phi_2_0 = xp.pad(self.flr2(xp.abs(self.phi)**2).real - (self.phi * self.flr2(self.phi.conjugate())).real, ((0, 1),), mode='wrap')
+			mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+			mu2 = 4 * self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real / 4 + interpn(self.xy_, phi_2_0, r_) / 2)
+			return mu0 + mu1 + mu2
 
 class GC2Dk:
 	def __repr__(self):
