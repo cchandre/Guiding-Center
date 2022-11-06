@@ -100,12 +100,12 @@ class GC2Dt:
 		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
 		if self.GCorder == 2:
 			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-			self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conjugate()) - self.phi_gc1_1.conjugate() * self.flr2(self.phi)).real / 2
+			self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.phi_gc1_1.conj() * self.flr2(self.phi)).real / 2
 			self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
 			self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
 
 	def eqn_gc(self, t, y):
-		r_ = xp.array(xp.split(y, 2)).transpose() % (2 * xp.pi)
+		r_ = xp.array(xp.split(y, 2)).T % (2 * xp.pi)
 		if self.GCorder == 1:
 			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, r_), 0, 1)
 			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
@@ -121,39 +121,36 @@ class GC2Dt:
 			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
 		r_, v_ = xp.split(y, 2)
 		vx, vy = xp.split(v_, 2)
-		r_ = xp.array(xp.split(r_, 2)).transpose() % (2 * xp.pi)
+		r_ = xp.array(xp.split(r_, 2)).T % (2 * xp.pi)
 		dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
 
 	def ions2gc(self, *y, order=0):
-		if order >= 2:
-			raise ValueError("ions2gc not available at order {}".format(order))
 		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
-		return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
+		if order <= 1:
+			return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
+		raise ValueError("ions2gc not available at order {}".format(order))
 
 	def compute_mu(self, t, *y, order=0):
-		if order >= 3:
-			raise ValueError("compute_mu not available at order {}".format(order))
 		x_, y_, vx, vy = y
 		r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
-		mu0 = self.rho**2 * (vx**2 + vy**2) / 2
+		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
-			return mu0
-		elif order == 1:
-			phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
-			mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
-			return mu0 + mu1
-		elif order == 2:
-			phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
-			phi_2_2 = xp.pad(2 * self.phi * self.flr2(self.phi) - self.flr2(self.phi**2), ((0, 1),), mode='wrap')
-			phi_2_0 = xp.pad(self.flr2(xp.abs(self.phi)**2).real - 2* (self.phi * self.flr2(self.phi.conjugate())).real, ((0, 1),), mode='wrap')
-			mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
-			mu2 = self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real + interpn(self.xy_, phi_2_0, r_))
-			return mu0 + mu1 + mu2
+			return mu
+		phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
+		mu += 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+		if order == 1:
+			return mu
+		phi_2_2 = xp.pad(2 * self.phi * self.flr2(self.phi) - self.flr2(self.phi**2), ((0, 1),), mode='wrap')
+		phi_2_0 = xp.pad(2 * self.phi * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2), ((0, 1),), mode='wrap')
+		mu += self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real - interpn(self.xy_, phi_2_0, r_)).real
+		if order == 2:
+			return mu
+		raise ValueError("compute_mu not available at order {}".format(order))
 
 class GC2Dk:
 	def __repr__(self):
