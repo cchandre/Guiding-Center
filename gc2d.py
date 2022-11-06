@@ -150,9 +150,9 @@ class GC2Dt:
 		elif order == 2:
 			phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
 			phi_2_2 = xp.pad(self.phi * self.flr2(self.phi) - self.flr2(self.phi**2) / 2, ((0, 1),), mode='wrap')
-			phi_2_0 = xp.pad(self.flr2(xp.abs(self.phi)**2).real - (self.phi * self.flr2(self.phi.conjugate())).real, ((0, 1),), mode='wrap')
+			phi_2_0 = xp.pad(self.flr2(xp.abs(self.phi)**2).real - 2* (self.phi * self.flr2(self.phi.conjugate())).real, ((0, 1),), mode='wrap')
 			mu1 = 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
-			mu2 = 4 * self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real / 4 + interpn(self.xy_, phi_2_0, r_) / 2)
+			mu2 = self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real + interpn(self.xy_, phi_2_0, r_))
 			return mu0 + mu1 + mu2
 
 class GC2Dk:
