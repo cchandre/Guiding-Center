@@ -106,6 +106,7 @@ def run_method(case):
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
 	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
+		order_mu = 2
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
@@ -166,10 +167,10 @@ def run_method(case):
 				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
 			elif case.Method == 'poincare_ions':
-				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=0)
-				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=0)
-				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=2)
-				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=2)
+				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=1)
+				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=1)
+				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=order_mu)
+				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
 				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
 			save_data(case, data, filestr, info=info)
@@ -228,10 +229,10 @@ def run_method(case):
 					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2], dtype=object)
 					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2'
 				elif case.Method == 'diffusion_ions':
-					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=0)
-					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=0)
-					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=2)
-					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=2)
+					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=1)
+					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=1)
+					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=order_mu)
+					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
 					t, t_win, r2_gc, r2_win_gc, r2_fit_gc, slope_gc, popt_gc, rvalue_gc, R2_gc = compute_r2(case, t_eval, x_gc_un, y_gc_un)
 					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2, r2_gc], dtype=object)
 					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2 / r2_gc'

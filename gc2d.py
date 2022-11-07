@@ -95,7 +95,8 @@ class GC2Dt:
 				x = sp.Symbol('x')
 				flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
 				flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
-		derivs = lambda psi: [xp.pad(ifft2(1j * nm[_] * fft2(psi)), ((0, 1),), mode='wrap') for _ in range(2)]
+		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
+		derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
 		self.Dphi_ions = xp.moveaxis(xp.stack(derivs(self.phi)), 0, -1)
 		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
 		if self.GCorder == 2:
@@ -127,7 +128,7 @@ class GC2Dt:
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
 
-	def ions2gc(self, *y, order=0):
+	def ions2gc(self, *y, order=1):
 		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
@@ -141,13 +142,15 @@ class GC2Dt:
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
-		phi_tilde = xp.pad(self.phi - self.phi_gc1_1, ((0, 1),), mode='wrap')
-		mu += 2 * self.eta * (interpn(self.xy_, phi_tilde, r_) * xp.exp(-1j * t)).imag
+		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(*y)) % (2 * xp.pi), 0, -1)
+		mu += 2 * self.eta * ((interpn(self.xy_, self.pad(self.phi), r_) - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
 			return mu
-		phi_2_2 = xp.pad(2 * self.phi * self.flr2(self.phi) - self.flr2(self.phi**2), ((0, 1),), mode='wrap')
-		phi_2_0 = xp.pad(2 * self.phi * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2), ((0, 1),), mode='wrap')
-		mu += self.eta**2 * ((interpn(self.xy_, phi_2_2, r_) * xp.exp(-2j * t)).real - interpn(self.xy_, phi_2_0, r_)).real
+		phi_c = interpn(self.xy_, self.pad(self.phi),r_)
+		phi_gc = interpn(self.xy_, self.pad(self.flr2(self.phi)), r_gc)
+		phi_2_2 = 2 * phi_c * phi_gc - interpn(self.xy_, self.pad(self.flr2(self.phi**2)), r_gc)
+		phi_2_0 = 2 * phi_c * phi_gc.conj() - interpn(self.xy_, self.pad(self.flr2(xp.abs(self.phi)**2)), r_gc)
+		mu += self.eta**2 * (phi_2_2 * xp.exp(-2j * t) - phi_2_0).real
 		if order == 2:
 			return mu
 		raise ValueError("compute_mu not available at order {}".format(order))
