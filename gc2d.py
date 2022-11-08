@@ -149,8 +149,8 @@ class GC2Dt:
 		phi_c = interpn(self.xy_, self.pad(self.phi),r_)
 		phi_gc = interpn(self.xy_, self.pad(self.flr2(self.phi)), r_gc)
 		phi_2_2 = 2 * phi_c * phi_gc - interpn(self.xy_, self.pad(self.flr2(self.phi**2)), r_gc)
-		phi_2_0 = 2 * phi_c * phi_gc.conj() - interpn(self.xy_, self.pad(self.flr2(xp.abs(self.phi)**2)), r_gc)
-		mu += self.eta**2 * (phi_2_2 * xp.exp(-2j * t) - phi_2_0).real
+		phi_2_0 = 2 * phi_c * phi_gc.conj().real - interpn(self.xy_, self.pad(self.flr2(xp.abs(self.phi)**2)), r_gc)
+		mu += self.eta**2 * ((phi_2_2 * xp.exp(-2j * t)).real - phi_2_0)
 		if order == 2:
 			return mu
 		raise ValueError("compute_mu not available at order {}".format(order))
