@@ -11,19 +11,19 @@ FLR = ('all', 'all')
 
 A = 0.7
 rho = 0.25
-eta = 0.01
+eta = 0.05
 
 Ntraj = 10
 Tf = 100
 threshold = 4
 TwoStepIntegration = False
 Tmid = 1000
-TimeStep = 1e-3
+TimeStep = 5e-3
 init = 'fixed'
 modulo = False
 grid = False
 
-SaveData = True
+SaveData = False
 PlotResults = True
 Parallelization = (False, 4)
 

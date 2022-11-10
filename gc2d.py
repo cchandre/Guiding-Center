@@ -101,32 +101,34 @@ class GC2Dt:
 		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
 		if self.GCorder == 2:
 			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-			self.phi_gc2_0 = -self.eta * (self.flr2(xp.abs(self.phi)**2) - self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.phi_gc1_1.conj() * self.flr2(self.phi)).real / 2
-			self.phi_gc2_2 = -self.eta * (self.flr2(self.phi**2) - 2 * self.phi_gc1_1 * self.flr2(self.phi)) / 2
+			self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
+			self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
 			self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
+		self.elts_nm = sqrt_nm, xp.angle(nm[0] + 1j * nm[1])
 
 	def eqn_gc(self, t, y):
-		r_ = xp.array(xp.split(y, 2)).T % (2 * xp.pi)
+		r_ = xp.moveaxis(xp.asarray(xp.split(y, 2)) % (2 * xp.pi), 0, -1)
 		if self.GCorder == 1:
 			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, r_), 0, 1)
-			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
-			return dy_gc1
 		elif self.GCorder == 2:
 			dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = xp.moveaxis(interpn(self.xy_, self.Dphi_gc2, r_), 0, 1)
-			dy_gc1 = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
-			dy_gc2 = xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
-			return dy_gc1 + dy_gc2
+		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
+		if self.GCorder == 1:
+			return dy_gc
+		dy_gc += xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
+		if self.GCorder == 2:
+			return dy_gc
+		raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
 
 	def eqn_ions(self, t, y):
 		if self.eta == 0 or self.rho == 0:
 			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
-		r_, v_ = xp.split(y, 2)
-		vx, vy = xp.split(v_, 2)
-		r_ = xp.array(xp.split(r_, 2)).T % (2 * xp.pi)
+		x_, y_, vx, vy = xp.split(y, 4)
+		r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 		dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
-		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * v_, dvx, dvy), axis=None)
+		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 
 	def ions2gc(self, *y, order=1):
 		x_, y_, vx, vy = y
@@ -136,24 +138,31 @@ class GC2Dt:
 			return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 		raise ValueError("ions2gc not available at order {}".format(order))
 
-	def compute_mu(self, t, *y, order=0):
+	def compute_mu(self, t, *y, order=1):
 		x_, y_, vx, vy = y
 		r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
 		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(*y)) % (2 * xp.pi), 0, -1)
-		mu += 2 * self.eta * ((interpn(self.xy_, self.pad(self.phi), r_) - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
+		phi_c = interpn(self.xy_, self.pad(self.phi), r_)
+		mu += 2 * self.eta * ((phi_c - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
 			return mu
-		phi_c = interpn(self.xy_, self.pad(self.phi),r_)
 		phi_gc = interpn(self.xy_, self.pad(self.flr2(self.phi)), r_gc)
+		phi_2_0 = 2 * phi_c * phi_gc.conj() - interpn(self.xy_, self.pad(self.flr2(xp.abs(self.phi)**2)), r_gc)
 		phi_2_2 = 2 * phi_c * phi_gc - interpn(self.xy_, self.pad(self.flr2(self.phi**2)), r_gc)
-		phi_2_0 = 2 * phi_c * phi_gc.conj().real - interpn(self.xy_, self.pad(self.flr2(xp.abs(self.phi)**2)), r_gc)
-		mu += self.eta**2 * ((phi_2_2 * xp.exp(-2j * t)).real - phi_2_0)
+		mu += self.eta**2 * (phi_2_2 * xp.exp(-2j * t) - phi_2_0).real
 		if order == 2:
 			return mu
 		raise ValueError("compute_mu not available at order {}".format(order))
+
+	def antiderivative(self, phi, nmax=2**4):
+		phi_fft = fft2(phi)
+		n = xp.arange(1, nmax + 1)
+		jvn = xp.moveaxis(xp.asarray([jv(n_, self.rho * self.elts_nm[0]) for n_ in n]), 0, -1)
+		coeff_ja = -2 * 1j ** n * jvn / n
+
 
 class GC2Dk:
 	def __repr__(self):
