@@ -27,7 +27,7 @@
 
 import numpy as xp
 import matplotlib.pyplot as plt
-from numpy.fft import fft2, ifft2, fftfreq
+from numpy.fft import fft2, ifft2, ifftn, fftfreq
 from scipy.interpolate import interpn
 from scipy.special import jv, eval_chebyu
 import sympy as sp
@@ -72,6 +72,7 @@ class GC2Dt:
 		self.xy_ = 2 * (xp.linspace(0, 2 * xp.pi, self.N+1, dtype=xp.float64),)
 		nm = xp.meshgrid(fftfreq(self.N, d=1/self.N), fftfreq(self.N, d=1/self.N), indexing='ij')
 		sqrt_nm = xp.sqrt(nm[0]**2 + nm[1]**2)
+		self.elts_nm = sqrt_nm, xp.angle(nm[0] + 1j * nm[1])
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
 		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0]**2 + n[1]**2)**1.5).astype(xp.complex128) * xp.exp(1j * phases)
 		fft_phi[sqrt_nm > self.M] = 0
@@ -104,7 +105,6 @@ class GC2Dt:
 			self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
 			self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
 			self.Dphi_gc2 = xp.moveaxis(xp.stack(self.derivs(self.phi_gc1_1) + self.derivs(self.phi_gc2_0) + self.derivs(self.phi_gc2_2)), 0, -1)
-		self.elts_nm = sqrt_nm, xp.angle(nm[0] + 1j * nm[1])
 
 	def eqn_gc(self, t, y):
 		r_ = xp.moveaxis(xp.asarray(xp.split(y, 2)) % (2 * xp.pi), 0, -1)
@@ -137,7 +137,7 @@ class GC2Dt:
 		x_gc, y_gc = x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 		if order <= 1:
 			return x_gc, y_gc
-		grid, s1 = - self.antiderivative(self.pad(self.phi))
+		grid, s1 = - self.antiderivative(self.phi, rho)
 		ds1dx, ds1dy = self.derivs(s1)
 		r_gc = xp.moveaxis(xp.asarray((x_gc, y_gc, theta)) % (2 * xp.pi), 0, -1)
 		x_gc -= 2 * self.eta * interpn(grid, (ds1dy * xp.exp(-1j * t)).imag, r_gc)
@@ -152,7 +152,7 @@ class GC2Dt:
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
-		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *y, order)) % (2 * xp.pi), 0, -1)
+		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *y, order=0)) % (2 * xp.pi), 0, -1)
 		phi_c = interpn(self.xy_, self.pad(self.phi), r_)
 		mu += 2 * self.eta * ((phi_c - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
@@ -165,12 +165,12 @@ class GC2Dt:
 			return mu
 		raise ValueError("compute_mu not available at order {}".format(order))
 
-	def antiderivative(self, phi, N=2**8):
+	def antiderivative(self, phi, rho, N=2**8):
 		n = xp.arange(1, N//2 + 1)
-		jvn = xp.moveaxis(xp.asarray([jv(n_, self.rho * self.elts_nm[0]) for n_ in n]), 0, -1)
+		jvn = xp.moveaxis(xp.asarray([jv(n_, rho * self.elts_nm[0]) for n_ in n]), 0, -1)
 		ja = 1j**n * jvn / (1j * n) * xp.exp(1j * n * self.elts_nm[1].reshape(self.N, self.N, 1))
 		ja = xp.concatenate((xp.zeros((self.N, self.N, 1)), ja[:, :, :N//2 - 1], xp.flip((-1)**n * ja.conj(), axis=2)), axis=2)
-		return self.xy_ + (xp.linspace(0, 2 * xp.pi, N + 1, dtype=xp.float64),), ifftn(fft2(phi) * coeff_ja) * N
+		return self.xy_ + (xp.linspace(0, 2 * xp.pi, N + 1, dtype=xp.float64),), ifftn(fft2(phi) * ja) * N
 
 
 class GC2Dk:
