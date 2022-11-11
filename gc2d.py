@@ -96,14 +96,14 @@ class GC2Dt:
 				flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
 				flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
 		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
-		derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
-		self.Dphi_ions = xp.moveaxis(xp.stack(derivs(self.phi)), 0, -1)
-		self.Dphi_gc1 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1)), 0, -1)
+		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
+		self.Dphi_ions = xp.moveaxis(xp.stack(self.derivs(self.phi)), 0, -1)
+		self.Dphi_gc1 = xp.moveaxis(xp.stack(self.derivs(self.phi_gc1_1)), 0, -1)
 		if self.GCorder == 2:
 			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
 			self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
 			self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
-			self.Dphi_gc2 = xp.moveaxis(xp.stack(derivs(self.phi_gc1_1) + derivs(self.phi_gc2_0) + derivs(self.phi_gc2_2)), 0, -1)
+			self.Dphi_gc2 = xp.moveaxis(xp.stack(self.derivs(self.phi_gc1_1) + self.derivs(self.phi_gc2_0) + self.derivs(self.phi_gc2_2)), 0, -1)
 		self.elts_nm = sqrt_nm, xp.angle(nm[0] + 1j * nm[1])
 
 	def eqn_gc(self, t, y):
@@ -130,12 +130,20 @@ class GC2Dt:
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 
-	def ions2gc(self, *y, order=1):
+	def ions2gc(self, t, *y, order=1):
 		x_, y_, vx, vy = y
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
+		x_gc, y_gc = x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 		if order <= 1:
-			return x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
+			return x_gc, y_gc
+		grid, s1 = self.antiderivative(self.pad(self.phi))
+		ds1dx, ds1dy = - self.derivs(s1)
+		r_gc = xp.moveaxis(xp.asarray((x_gc, y_gc, theta)) % (2 * xp.pi), 0, -1)
+		x_gc -= 2 * self.eta * interpn(grid, (ds1dy * xp.exp(-1j * t)).imag, r_gc)
+		y_gc += 2 * self.eta * interpn(grid, (ds1dx * xp.exp(-1j * t)).imag, r_gc)
+		if order == 2:
+			return x_gc, y_gc
 		raise ValueError("ions2gc not available at order {}".format(order))
 
 	def compute_mu(self, t, *y, order=1):
@@ -144,7 +152,7 @@ class GC2Dt:
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
-		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(*y)) % (2 * xp.pi), 0, -1)
+		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *y, order)) % (2 * xp.pi), 0, -1)
 		phi_c = interpn(self.xy_, self.pad(self.phi), r_)
 		mu += 2 * self.eta * ((phi_c - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
@@ -157,12 +165,12 @@ class GC2Dt:
 			return mu
 		raise ValueError("compute_mu not available at order {}".format(order))
 
-	def antiderivative(self, phi, nmax=2**4):
-		n = xp.arange(1, nmax//2 + 1)
+	def antiderivative(self, phi, N=2**8):
+		n = xp.arange(1, N//2 + 1)
 		jvn = xp.moveaxis(xp.asarray([jv(n_, self.rho * self.elts_nm[0]) for n_ in n]), 0, -1)
-		ja = 1j**n * jvn / (1j * n) * xp.exp(1j * n * self.elts_nm[1].reshape(N, N, 1))
-		ja = xp.concatenate((xp.zeros((N, N, 1)), ja[:, :, :nmax//2 - 1], xp.flip((-1)**n * ja.conj(), axis=2)), axis=2)
-		return ifftn(fft2(phi) * coeff_ja) * nmax
+		ja = 1j**n * jvn / (1j * n) * xp.exp(1j * n * self.elts_nm[1].reshape(self.N, self.N, 1))
+		ja = xp.concatenate((xp.zeros((self.N, self.N, 1)), ja[:, :, :N//2 - 1], xp.flip((-1)**n * ja.conj(), axis=2)), axis=2)
+		return self.xy_ + (xp.linspace(0, 2 * xp.pi, N + 1, dtype=xp.float64),), ifftn(fft2(phi) * coeff_ja) * N
 
 
 class GC2Dk:
