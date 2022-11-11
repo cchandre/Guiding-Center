@@ -137,8 +137,8 @@ class GC2Dt:
 		x_gc, y_gc = x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
 		if order <= 1:
 			return x_gc, y_gc
-		grid, s1 = self.antiderivative(self.pad(self.phi))
-		ds1dx, ds1dy = - self.derivs(s1)
+		grid, s1 = - self.antiderivative(self.pad(self.phi))
+		ds1dx, ds1dy = self.derivs(s1)
 		r_gc = xp.moveaxis(xp.asarray((x_gc, y_gc, theta)) % (2 * xp.pi), 0, -1)
 		x_gc -= 2 * self.eta * interpn(grid, (ds1dy * xp.exp(-1j * t)).imag, r_gc)
 		y_gc += 2 * self.eta * interpn(grid, (ds1dx * xp.exp(-1j * t)).imag, r_gc)
