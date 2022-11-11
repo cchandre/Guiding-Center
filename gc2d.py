@@ -158,10 +158,11 @@ class GC2Dt:
 		raise ValueError("compute_mu not available at order {}".format(order))
 
 	def antiderivative(self, phi, nmax=2**4):
-		phi_fft = fft2(phi)
-		n = xp.arange(1, nmax + 1)
+		n = xp.arange(1, nmax//2 + 1)
 		jvn = xp.moveaxis(xp.asarray([jv(n_, self.rho * self.elts_nm[0]) for n_ in n]), 0, -1)
-		coeff_ja = -2 * 1j ** n * jvn / n
+		ja = 1j**n * jvn / (1j * n) * xp.exp(1j * n * self.elts_nm[1].reshape(N, N, 1))
+		ja = xp.concatenate((xp.zeros((N, N, 1)), ja[:, :, :nmax//2 - 1], xp.flip((-1)**n * ja.conj(), axis=2)), axis=2)
+		return ifftn(fft2(phi) * coeff_ja) * nmax
 
 
 class GC2Dk:
