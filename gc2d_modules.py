@@ -138,20 +138,30 @@ def run_method(case):
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
+			if case.check_energy:
+				k_un, k_tr = k[untrapped, :], k[trapped, :]
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
 		else:
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				sol = solve_ivp(case.eqn_gc, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
-				x, y = xp.split(sol.y, 2)
+				if not case.check_energy:
+					x, y = xp.split(sol.y, 2)
+				else:
+					x, y, k = xp.split(sol.y, 3)
 			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				sol = solve_ivp(case.eqn_ions, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
-				x, y, vx, vy = xp.split(sol.y, 4)
+				if not case.check_energy:
+					x, y, vx, vy = xp.split(sol.y, 4)
+				else:
+					x, y, vx, vy, k = xp.split(sol.y, 5)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
+			if case.check_energy:
+				k_un, k_tr = k[untrapped, :], k[trapped, :]
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
@@ -159,13 +169,21 @@ def run_method(case):
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_gc, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
-				x, y = xp.split(sol.y, 2)
+				if not case.check_energy:
+					x, y = xp.split(sol.y, 2)
+				else:
+					x, y, k = xp.split(sol.y, 3)
 			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx_un[:, -1], vy_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_ions, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
-				x, y, vx, vy = xp.split(sol.y, 4)
+				if not case.check_energy:
+					x, y, vx, vy = xp.split(sol.y, 4)
+				else:
+					x, y, vx, vy, k = xp.split(sol.y, 5)
 			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
+			if case.check_energy:
+				k_un = xp.concatenate((k_un, k[:, 1:]), axis=1)
 			if case.Method in ['poincare_ions', 'diffusion_ions']:
 				vx_un = xp.concatenate((vx_un, vx[:, 1:]), axis=1)
 				vy_un = xp.concatenate((vy_un, vy[:, 1:]), axis=1)
@@ -176,8 +194,8 @@ def run_method(case):
 					data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
 					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
 				else:
-					h_un = case.compute_energy(t_eval, x_un, y_un, type='gc')
-					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, type='gc')
+					h_un = case.compute_energy(t_eval, x_un, y_un, k_un, type='gc')
+					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, k_tr, type='gc')
 					data = xp.array([x_un, y_un, x_tr, y_tr, h_un, h_tr], dtype=object)
 					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / h_untrapped / h_trapped'
 			elif case.Method == 'poincare_ions':
@@ -189,8 +207,8 @@ def run_method(case):
 					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
 					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
 				else:
-					h_un = case.compute_energy(t_eval, x_un, y_un, vx_un, vy_un, type='ions')
-					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, type='ions')
+					h_un = case.compute_energy(t_eval, x_un, y_un, vx_un, vy_un, k_un, type='ions')
+					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, k_tr, type='ions')
 					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, h_un, h_tr], dtype=object)
 					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / h_untrapped / h_trapped'
 			save_data(case, data, filestr, info=info)

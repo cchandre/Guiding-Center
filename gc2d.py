@@ -151,7 +151,7 @@ class GC2Dt:
 
 	def compute_energy(self, t, *y, type='gc'):
 		if type == 'gc':
-			x_, y_, k = xp.split(y, 3)
+			x_, y_, k = y
 			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r_)
 			h = k + (phi_1 * xp.exp(-1j * t)).imag
@@ -159,14 +159,16 @@ class GC2Dt:
 				return h
 			elif self.GCorder == 2:
 				phi_temp = xp.moveaxis(xp.stack((self.pad(self.phi_gc2_0), self.pad(self.phi_gc2_2))), 0, -1)
+				print(xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1).shape)
 				phi_0, phi_2 = xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1)
 				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
 				return h
 			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
 		elif type == 'ions':
-			x_, y_, vx, vy, k = xp.split(y, 5)
+			x_, y_, vx, vy, k = y
 			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r_) * xp.exp(-1j * t)).imag / (2 * self.eta)
+			return h
 		raise ValueError("Error of type in compute_energy")
 
 	def ions2gc(self, t, *y, order=1):
