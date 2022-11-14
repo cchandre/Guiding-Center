@@ -106,7 +106,7 @@ def run_method(case):
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
 	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
-		order_mu = 2
+		order_mu = 1
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
@@ -117,15 +117,23 @@ def run_method(case):
 		if case.Method in ['poincare_ions', 'diffusion_ions']:
 			phi_perp = 2 * xp.pi * xp.random.rand(case.Ntraj)
 			y0 = xp.concatenate((y0, xp.cos(phi_perp), xp.sin(phi_perp)), axis=None)
+		if case.check_energy:
+			y0 = xp.concatenate((y0, xp.zeros(case.Ntraj)), axis=None)
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
 			if case.Method in ['poincare_gc', 'diffusion_gc']:
 				sol = solve_ivp(case.eqn_gc, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
-				x, y = xp.split(sol.y, 2)
+				if not case.check_energy:
+					x, y = xp.split(sol.y, 2)
+				else:
+					x, y, k = xp.split(sol.y, 3)
 			elif case.Method in ['poincare_ions', 'diffusion_ions']:
 				sol = solve_ivp(case.eqn_ions, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
-				x, y, vx, vy = xp.split(sol.y, 4)
+				if not case.check_energy:
+					x, y, vx, vy = xp.split(sol.y, 4)
+				else:
+					x, y, vx, vy, k = xp.split(sol.y, 5)
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
@@ -164,15 +172,27 @@ def run_method(case):
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		if case.Method in ['poincare_gc', 'poincare_ions']:
 			if case.Method == 'poincare_gc':
-				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
-				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
+				if not case.check_energy:
+					data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
+					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
+				else:
+					h_un = case.compute_energy(t_eval, x_un, y_un, type='gc')
+					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, type='gc')
+					data = xp.array([x_un, y_un, x_tr, y_tr, h_un, h_tr], dtype=object)
+					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / h_untrapped / h_trapped'
 			elif case.Method == 'poincare_ions':
-				x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=1)
-				x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=1)
+				x_gc_un, y_gc_un = case.ions2gc(t_eval, x_un, y_un, vx_un, vy_un, order=1)
+				x_gc_tr, y_gc_tr = case.ions2gc(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, order=1)
 				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=order_mu)
-				mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
-				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
-				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
+				mu_tr = case.compute_mu(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
+				if not case.check_energy:
+					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
+					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
+				else:
+					h_un = case.compute_energy(t_eval, x_un, y_un, vx_un, vy_un, type='ions')
+					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, type='ions')
+					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, h_un, h_tr], dtype=object)
+					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / h_untrapped / h_trapped'
 			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)

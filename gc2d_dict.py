@@ -18,12 +18,13 @@ Tf = 100
 threshold = 4
 TwoStepIntegration = False
 Tmid = 1000
-TimeStep = 5e-3
+TimeStep = 5e-2
+check_energy = True
 init = 'fixed'
 modulo = False
 grid = False
 
-SaveData = False
+SaveData = True
 PlotResults = True
 Parallelization = (False, 4)
 
@@ -45,7 +46,7 @@ val_params = xp.meshgrid(A, rho, eta, indexing='ij')
 num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
 if Tmid >= Tf:
-	Tmid = Tf / 2
+	Tmid = Tf // 2 if TwoStepIntegration else Tf
 for _, dict in enumerate(dict_list):
 	dict.update({
 		'A': val_params[0].flatten()[_],
@@ -63,6 +64,7 @@ for _, dict in enumerate(dict_list):
 		'Tmid': Tmid,
 		'init': init,
 		'TimeStep': TimeStep,
+		'check_energy': check_energy,
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,
 		'dpi': dpi,

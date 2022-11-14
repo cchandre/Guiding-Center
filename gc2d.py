@@ -120,8 +120,7 @@ class GC2Dt:
 		if self.GCorder == 1:
 			if not self.check_energy:
 				return dy_gc
-			phi_temp = xp.moveaxis(xp.stack((self.pad(self.phi_gc1_1))), 0, -1)
-			phi_1 = xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1)
+			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r_)
 			return xp.concatenate((dy_gc, (phi_1 * xp.exp(-1j * t)).real), axis=None)
 		dy_gc += xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
 		if self.GCorder == 2:
@@ -144,11 +143,31 @@ class GC2Dt:
 		dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
-		if self.check_energy:
-			phi = interpn(self.xy_, self.pad(self.phi), r_)
-			dk = - (phi * xp.exp(-1j * t)).real / (2 * self.eta)
-			return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy, dk), axis=None)
-		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
+		if not self.check_energy:
+			return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
+		phi = interpn(self.xy_, self.pad(self.phi), r_)
+		dk = - (phi * xp.exp(-1j * t)).real / (2 * self.eta)
+		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy, dk), axis=None)
+
+	def compute_energy(self, t, *y, type='gc'):
+		if type == 'gc':
+			x_, y_, k = xp.split(y, 3)
+			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
+			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r_)
+			h = k + (phi_1 * xp.exp(-1j * t)).imag
+			if self.GCorder == 1:
+				return h
+			elif self.GCorder == 2:
+				phi_temp = xp.moveaxis(xp.stack((self.pad(self.phi_gc2_0), self.pad(self.phi_gc2_2))), 0, -1)
+				phi_0, phi_2 = xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1)
+				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
+				return h
+			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
+		elif type == 'ions':
+			x_, y_, vx, vy, k = xp.split(y, 5)
+			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
+			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r_) * xp.exp(-1j * t)).imag / (2 * self.eta)
+		raise ValueError("Error of type in compute_energy")
 
 	def ions2gc(self, t, *y, order=1):
 		x_, y_, vx, vy = y
