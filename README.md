@@ -37,6 +37,7 @@ ___
 - *threshold*: float; value used to discriminate between trapped and untrapped trajectories
 - *TwoStepIntegration*: boolean; if true, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continues integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
 - *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
+- *check_energy*: boolean; if True, the autonomous system is integrated and the output (`.mat` file) includes the total energy
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
 - *modulo*: boolean; if True, *x* and *y* are represented modulo 2&pi; (only for Method='poincare' and PlotResults=True)
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2<sup>10</sup>)
