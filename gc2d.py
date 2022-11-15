@@ -171,10 +171,8 @@ class GC2Dt:
 			if self.GCorder == 1:
 				return h
 			elif self.GCorder == 2:
-				phi_temp = xp.moveaxis(xp.stack((self.pad(self.phi_gc2_0), self.pad(self.phi_gc2_2))), 0, -1)
-				print(interpn(self.xy_, phi_temp, r_).shape)
-				print(xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1).shape)
-				phi_0, phi_2 = xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1)
+				phi_0 = interpn(self.xy_, self.pad(self.phi_gc2_0), r_)
+				phi_2 = interpn(self.xy_, self.pad(self.phi_gc2_2), r_)
 				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
 				return h
 			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
