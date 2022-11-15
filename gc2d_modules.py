@@ -114,7 +114,7 @@ def run_method(case):
 			y_mat = xp.meshgrid(y_vec, y_vec)
 			y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
-		if case.Method in ['poincare_ions', 'diffusion_ions']:
+		if case.Method.endswith('_ions'):
 			phi_perp = 2 * xp.pi * xp.random.rand(case.Ntraj)
 			y0 = xp.concatenate((y0, xp.cos(phi_perp), xp.sin(phi_perp)), axis=None)
 		if case.check_energy:
@@ -122,73 +122,73 @@ def run_method(case):
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
-			if case.Method in ['poincare_gc', 'diffusion_gc']:
+			if case.Method.endswith('_gc'):
 				sol = solve_ivp(case.eqn_gc, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
-				if not case.check_energy:
-					x, y = xp.split(sol.y, 2)
-				else:
-					x, y, k = xp.split(sol.y, 3)
-			elif case.Method in ['poincare_ions', 'diffusion_ions']:
+				sol_ = xp.split(sol.y, 2 + case.check_energy)
+				x, y = sol_[:2]
+				if case.check_energy:
+					k = sol_[2]
+			elif case.Method.endswith('_ions'):
 				sol = solve_ivp(case.eqn_ions, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
-				if not case.check_energy:
-					x, y, vx, vy = xp.split(sol.y, 4)
-				else:
-					x, y, vx, vy, k = xp.split(sol.y, 5)
+				sol_ = xp.split(sol.y, 4 + case.check_energy)
+				x, y, vx, vy = sol_[:4]
+				if case.check_energy:
+					k = sol_[4]
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
 			if case.check_energy:
 				k_un, k_tr = k[untrapped, :], k[trapped, :]
-			if case.Method in ['poincare_ions', 'diffusion_ions']:
+			if case.Method.endswith('_ions'):
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
 		else:
-			if case.Method in ['poincare_gc', 'diffusion_gc']:
+			if case.Method.endswith('_gc'):
 				sol = solve_ivp(case.eqn_gc, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
-				if not case.check_energy:
-					x, y = xp.split(sol.y, 2)
-				else:
-					x, y, k = xp.split(sol.y, 3)
-			elif case.Method in ['poincare_ions', 'diffusion_ions']:
+				sol_ = xp.split(sol.y, 2 + case.check_energy)
+				x, y = sol_[:2]
+				if case.check_energy:
+					k = sol_[2]
+			elif case.Method.endswith('_ions'):
 				sol = solve_ivp(case.eqn_ions, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
-				if not case.check_energy:
-					x, y, vx, vy = xp.split(sol.y, 4)
-				else:
-					x, y, vx, vy, k = xp.split(sol.y, 5)
+				sol_ = xp.split(sol.y, 4 + case.check_energy)
+				x, y, vx, vy = sol_[:4]
+				if case.check_energy:
+					k = sol_[4]
 			untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
 			if case.check_energy:
 				k_un, k_tr = k[untrapped, :], k[trapped, :]
-			if case.Method in ['poincare_ions', 'diffusion_ions']:
+			if case.Method.endswith('_ions'):
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
 			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(untrapped.sum()))
-			if case.Method in ['poincare_gc', 'diffusion_gc']:
+			if case.Method.endswith('_gc'):
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_gc, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
-				if not case.check_energy:
-					x, y = xp.split(sol.y, 2)
-				else:
-					x, y, k = xp.split(sol.y, 3)
-			elif case.Method in ['poincare_ions', 'diffusion_ions']:
+				sol_ = xp.split(sol.y, 2 + case.check_energy)
+				x, y = sol_[:2]
+				if case.check_energy:
+					k = sol_[2]
+			elif case.Method.endswith('_ions'):
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx_un[:, -1], vy_un[:, -1]), axis=None)
 				sol = solve_ivp(case.eqn_ions, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
-				if not case.check_energy:
-					x, y, vx, vy = xp.split(sol.y, 4)
-				else:
-					x, y, vx, vy, k = xp.split(sol.y, 5)
+				sol_ = xp.split(sol.y, 4 + case.check_energy)
+				x, y, vx, vy = sol_[:4]
+				if case.check_energy:
+					k = sol_[4]
 			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
 			if case.check_energy:
 				k_un = xp.concatenate((k_un, k[:, 1:]), axis=1)
-			if case.Method in ['poincare_ions', 'diffusion_ions']:
+			if case.Method.endswith('_ions'):
 				vx_un = xp.concatenate((vx_un, vx[:, 1:]), axis=1)
 				vy_un = xp.concatenate((vy_un, vy[:, 1:]), axis=1)
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
-		if case.Method in ['poincare_gc', 'poincare_ions']:
+		if case.Method.startswith('poincare'):
 			if case.Method == 'poincare_gc':
 				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
 				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
@@ -245,7 +245,7 @@ def run_method(case):
 					fig.savefig(filestr + '.png', dpi=case.dpi)
 					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
 				plt.pause(0.5)
-		if case.Method in ['diffusion_gc', 'diffusion_ions']:
+		if case.Method.startswith('diffusion'):
 			if untrapped.sum() <= 5:
 				print("\033[33m          Warning: not enough untrapped trajectories ({}) \033[00m".format(untrapped.sum()))
 			else:

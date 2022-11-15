@@ -120,16 +120,14 @@ class GC2Dt:
 		vars = xp.split(y, 2 + self.check_energy)
 		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
-		if not self.check_energy:
+		dphidx, dphidy = fields[:2]
+		if self.GCorder == 2:
+			dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields[2:6]
+		if self.check_energy:
 			if self.GCorder == 1:
-				dphidx, dphidy = fields
+				phi_1 = fields[2]
 			elif self.GCorder == 2:
-				dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields
-		else:
-			if self.GCorder == 1:
-				dphidx, dphidy, phi_1 = fields
-			elif self.GCorder == 2:
-				dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2, phi_1, phi_2 = fields
+				phi_1, phi_2 = fields[6:8]
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 		if self.GCorder == 1:
 			if not self.check_energy:
@@ -150,12 +148,11 @@ class GC2Dt:
 		vars = xp.split(y, 4 + self.check_energy)
 		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
-		if not self.check_energy:
-			x_, y_, vx, vy = vars
-			dphidx, dphidy = fields
-		else:
-			x_, y_, vx, vy, k = vars
-			dphidx, dphidy, phi = fields
+		x_, y_, vx, vy = vars[:4]
+		dphidx, dphidy = fields[:2]
+		if self.check_energy:
+			k = vars[4]
+			phi = fields[2]
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		d_ = xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
@@ -165,9 +162,9 @@ class GC2Dt:
 		return xp.concatenate((d_, dk), axis=None)
 
 	def compute_energy(self, t, *y, type='gc'):
+		r_ = xp.moveaxis(xp.asarray(y[:2]) % (2 * xp.pi), 0, -1)
+		k = y[-1]
 		if type == 'gc':
-			x_, y_, k = y
-			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r_)
 			h = k + (phi_1 * xp.exp(-1j * t)).imag
 			if self.GCorder == 1:
@@ -179,8 +176,7 @@ class GC2Dt:
 				return h
 			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
 		elif type == 'ions':
-			x_, y_, vx, vy, k = y
-			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
+			vx, vy = y[2:4]
 			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r_) * xp.exp(-1j * t)).imag / (2 * self.eta)
 			return h
 		raise ValueError("Error of type in compute_energy")
