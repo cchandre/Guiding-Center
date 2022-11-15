@@ -195,7 +195,9 @@ def run_method(case):
 				if case.check_energy:
 					h_un = case.compute_energy(t_eval, x_un, y_un, k_un, type='gc')
 					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, k_tr, type='gc')
-					data = xp.concatenate((*data, h_un, h_tr), dtype=object)
+					h_un = (h_un.T - h_un[:, 0]).T
+					h_tr = (h_tr.T - h_tr[:,0]).T
+					data = xp.array([*data, h_un, h_tr], dtype=object)
 					info += ' / h_untrapped / h_trapped'
 			elif case.Method == 'poincare_ions':
 				x_gc_un, y_gc_un = case.ions2gc(t_eval, x_un, y_un, vx_un, vy_un, order=1)
@@ -207,7 +209,9 @@ def run_method(case):
 				if case.check_energy:
 					h_un = case.compute_energy(t_eval, x_un, y_un, vx_un, vy_un, k_un, type='ions')
 					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, k_tr, type='ions')
-					data = xp.concatenate((*data, h_un, h_tr), dtype=object)
+					h_un = (h_un.T - h_un[:, 0]).T
+					h_tr = (h_tr.T - h_tr[:,0]).T
+					data = xp.array([*data, h_un, h_tr], dtype=object)
 					info += ' / h_untrapped / h_trapped'
 			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
