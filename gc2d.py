@@ -203,7 +203,7 @@ class GC2Dt:
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
-		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *y, order=0)) % (2 * xp.pi), 0, -1)
+		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *y, order=1)) % (2 * xp.pi), 0, -1)
 		phi_c = interpn(self.xy_, self.pad(self.phi), r_)
 		mu += 2 * self.eta * ((phi_c - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
