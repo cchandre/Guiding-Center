@@ -146,7 +146,7 @@ class GC2Dt:
 		if not self.check_energy:
 			return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 		phi = interpn(self.xy_, self.pad(self.phi), r_)
-		dk = - (phi * xp.exp(-1j * t)).real / (2 * self.eta)
+		dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy, dk), axis=None)
 
 	def compute_energy(self, t, *y, type='gc'):
