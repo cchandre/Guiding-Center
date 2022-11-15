@@ -190,27 +190,25 @@ def run_method(case):
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		if case.Method in ['poincare_gc', 'poincare_ions']:
 			if case.Method == 'poincare_gc':
-				if not case.check_energy:
-					data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
-					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
-				else:
+				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
+				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
+				if case.check_energy:
 					h_un = case.compute_energy(t_eval, x_un, y_un, k_un, type='gc')
 					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, k_tr, type='gc')
-					data = xp.array([x_un, y_un, x_tr, y_tr, h_un, h_tr], dtype=object)
-					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / h_untrapped / h_trapped'
+					data = xp.concatenate((*data, h_un, h_tr), dtype=object)
+					info += ' / h_untrapped / h_trapped'
 			elif case.Method == 'poincare_ions':
 				x_gc_un, y_gc_un = case.ions2gc(t_eval, x_un, y_un, vx_un, vy_un, order=1)
 				x_gc_tr, y_gc_tr = case.ions2gc(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, order=1)
 				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=order_mu)
 				mu_tr = case.compute_mu(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
-				if not case.check_energy:
-					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
-					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
-				else:
+				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
+				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
+				if case.check_energy:
 					h_un = case.compute_energy(t_eval, x_un, y_un, vx_un, vy_un, k_un, type='ions')
 					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, k_tr, type='ions')
-					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, h_un, h_tr], dtype=object)
-					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / h_untrapped / h_trapped'
+					data = xp.concatenate((*data, h_un, h_tr), dtype=object)
+					info += ' / h_untrapped / h_trapped'
 			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)

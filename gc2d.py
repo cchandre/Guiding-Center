@@ -147,20 +147,22 @@ class GC2Dt:
 	def eqn_ions(self, t, y):
 		if self.eta == 0 or self.rho == 0:
 			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
+		vars = xp.split(y, 4 + self.check_energy)
+		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
+		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
 		if not self.check_energy:
-			x_, y_, vx, vy = xp.split(y, 4)
-			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
-			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
+			x_, y_, vx, vy = vars
+			dphidx, dphidy = fields
 		else:
-			x_, y_, vx, vy, k = xp.split(y, 5)
-			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
-			dphidx, dphidy, phi = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
+			x_, y_, vx, vy, k = vars
+			dphidx, dphidy, phi = fields
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
+		d_ = xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 		if not self.check_energy:
-			return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
+			return d_
 		dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
-		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy, dk), axis=None)
+		return xp.concatenate((d_, dk), axis=None)
 
 	def compute_energy(self, t, *y, type='gc'):
 		if type == 'gc':
