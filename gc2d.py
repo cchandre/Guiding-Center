@@ -76,6 +76,9 @@ class GC2Dt:
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
 		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0]**2 + n[1]**2)**1.5).astype(xp.complex128) * xp.exp(1j * phases)
 		fft_phi[sqrt_nm > self.M] = 0
+		self.phi = ifft2(fft_phi) * (self.N**2)
+		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
+		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
 		if (self.FLR[0] == 'none') or (self.FLR[0] in range(2)):
 			flr1_coeff = 1
 		elif self.FLR[0] == 'all':
@@ -85,48 +88,48 @@ class GC2Dt:
 			flr_expansion = sp.besselj(0, x).series(x, 0, self.FLR[0] + 1).removeO()
 			flr_func = sp.lambdify(x, flr_expansion)
 			flr1_coeff = flr_func(self.rho * sqrt_nm)
-		self.phi = ifft2(fft_phi) * (self.N**2)
 		self.phi_gc1_1 = ifft2(flr1_coeff * fft_phi) * (self.N**2)
-		if (self.FLR[1] == 'none') or (self.FLR[1] in range(3)) or (self.rho == 0):
-			flr2_coeff = -sqrt_nm**2 / 2
+		if self.Method.endswith('_ions'):
+			stack = self.derivs(self.phi)
+			if self.check_energy:
+				stack = (*stack, self.pad(self.phi))
 		else:
-			if self.FLR[1] == 'all':
-				flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
-			elif isinstance(self.FLR[1], int):
-				x = sp.Symbol('x')
-				flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
-				flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
-		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
-		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
-		if not self.check_energy:
-			self.Dphi_ions = xp.moveaxis(xp.stack(self.derivs(self.phi)), 0, -1)
-			self.Dphi_gc1 = xp.moveaxis(xp.stack(self.derivs(self.phi_gc1_1)), 0, -1)
-		else:
-			self.Dphi_ions = xp.moveaxis(xp.stack((*self.derivs(self.phi), self.pad(self.phi))), 0, -1)
-			self.Dphi_gc1 = xp.moveaxis(xp.stack((*self.derivs(self.phi_gc1_1), self.pad(self.phi_gc1_1))), 0, -1)
-		if self.GCorder == 2:
-			self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-			self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
-			self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
-			if not self.check_energy:
-				self.Dphi_gc2 = xp.moveaxis(xp.stack((*self.derivs(self.phi_gc1_1), *self.derivs(self.phi_gc2_0), *self.derivs(self.phi_gc2_2))), 0, -1)
-			else:
-				self.Dphi_gc2 = xp.moveaxis(xp.stack((*self.derivs(self.phi_gc1_1), *self.derivs(self.phi_gc2_0), *self.derivs(self.phi_gc2_2), self.pad(self.phi_gc1_1), self.pad(self.phi_gc2_2))), 0, -1)
+			if self.GCorder == 1:
+				stack = self.derivs(self.phi_gc1_1)
+				if self.check_energy:
+					stack = (*stack, self.pad(self.phi_gc1_1))
+			elif self.GCorder == 2:
+				if (self.FLR[1] == 'none') or (self.FLR[1] in range(3)) or (self.rho == 0):
+					flr2_coeff = -sqrt_nm**2 / 2
+				else:
+					if self.FLR[1] == 'all':
+						flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
+					elif isinstance(self.FLR[1], int):
+						x = sp.Symbol('x')
+						flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
+						flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
+				self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
+				self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
+				self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
+				stack = (*self.derivs(self.phi_gc1_1), *self.derivs(self.phi_gc2_0), *self.derivs(self.phi_gc2_2))
+				if self.check_energy:
+					stack += (self.pad(self.phi_gc1_1), self.pad(self.phi_gc2_2))
+		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
 
 	def eqn_gc(self, t, y):
+		vars = xp.split(y, 2 + self.check_energy)
+		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
+		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
 		if not self.check_energy:
-			r_ = xp.moveaxis(xp.asarray(xp.split(y, 2)) % (2 * xp.pi), 0, -1)
 			if self.GCorder == 1:
-				dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, r_), 0, 1)
+				dphidx, dphidy = fields
 			elif self.GCorder == 2:
-				dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = xp.moveaxis(interpn(self.xy_, self.Dphi_gc2, r_), 0, 1)
+				dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields
 		else:
-			x_, y_, k = xp.split(y, 3)
-			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 			if self.GCorder == 1:
-				dphidx, dphidy, phi_1 = xp.moveaxis(interpn(self.xy_, self.Dphi_gc1, r_), 0, 1)
+				dphidx, dphidy, phi_1 = fields
 			elif self.GCorder == 2:
-				dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2, phi_1, phi_2 = xp.moveaxis(interpn(self.xy_, self.Dphi_gc2, r_), 0, 1)
+				dphidx, dphidy, dphidx_0, dphidy_0, dphidx_2, dphidy_2, phi_1, phi_2 = fields
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 		if self.GCorder == 1:
 			if not self.check_energy:
@@ -147,11 +150,11 @@ class GC2Dt:
 		if not self.check_energy:
 			x_, y_, vx, vy = xp.split(y, 4)
 			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
-			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
+			dphidx, dphidy = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
 		else:
 			x_, y_, vx, vy, k = xp.split(y, 5)
 			r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
-			dphidx, dphidy, phi = xp.moveaxis(interpn(self.xy_, self.Dphi_ions, r_), 0, 1)
+			dphidx, dphidy, phi = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		if not self.check_energy:
@@ -169,6 +172,8 @@ class GC2Dt:
 				return h
 			elif self.GCorder == 2:
 				phi_temp = xp.moveaxis(xp.stack((self.pad(self.phi_gc2_0), self.pad(self.phi_gc2_2))), 0, -1)
+				print(interpn(self.xy_, phi_temp, r_).shape)
+				print(xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1).shape)
 				phi_0, phi_2 = xp.moveaxis(interpn(self.xy_, phi_temp, r_), 0, 1)
 				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
 				return h
