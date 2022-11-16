@@ -26,7 +26,7 @@ ___
   - 'poincare_ions': plots the trajectories of the ions in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
   - 'poincare_gc': plots the guiding-center trajectories in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
 ####
-- *FLR*: tuple of 2 elements; 'none', 'all' or integer; FLR order for each GC order
+- *FLR*: tuple of 2 booleans; if True, FLR to all orders is taken into account for the order 1 and 2 in the guiding-center calculations
 - *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
 - *rho*: float or array of floats; value(s) of the Larmor radius; for ions, this value corresponds to the thermal Larmor radius
 - *eta*: float or array of floats; value(s) of the coefficient in front of the GC order 2 potential; &eta;>0 for positive charge, &eta;<0 for negative charge [theory: &eta;=1/(2&Omega;)] 
