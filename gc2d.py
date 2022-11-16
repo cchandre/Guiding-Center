@@ -60,7 +60,10 @@ class GC2Dt:
 		return "{self.__class__.__name__}({self.DictParams})".format(self=self)
 
 	def __str__(self):
-		return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
+		if self.Method.endswith('_ions'):
+			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the ions".format(self=self)
+		elif self.Method.endswith('_gc'):
+			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
 
 	def __init__(self, dict):
 		for key in dict:
@@ -79,15 +82,10 @@ class GC2Dt:
 		self.phi = ifft2(fft_phi) * (self.N**2)
 		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
 		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
-		if (self.FLR[0] == 'none') or (self.FLR[0] in range(2)):
-			flr1_coeff = 1
-		elif self.FLR[0] == 'all':
+		if self.FLR[0]:
 			flr1_coeff = jv(0, self.rho * sqrt_nm)
-		elif isinstance(self.FLR[0], int):
-			x = sp.Symbol('x')
-			flr_expansion = sp.besselj(0, x).series(x, 0, self.FLR[0] + 1).removeO()
-			flr_func = sp.lambdify(x, flr_expansion)
-			flr1_coeff = flr_func(self.rho * sqrt_nm)
+		else:
+			flr1_coeff = 1
 		self.phi_gc1_1 = ifft2(flr1_coeff * fft_phi) * (self.N**2)
 		if self.Method.endswith('_ions'):
 			stack = self.derivs(self.phi)
@@ -99,15 +97,10 @@ class GC2Dt:
 				if self.check_energy:
 					stack = (*stack, self.pad(self.phi_gc1_1))
 			elif self.GCorder == 2:
-				if (self.FLR[1] == 'none') or (self.FLR[1] in range(3)) or (self.rho == 0):
+				if self.FLR[1]:
+					flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
+				elif (not self.FLR[1]) or (self.rho == 0):
 					flr2_coeff = -sqrt_nm**2 / 2
-				else:
-					if self.FLR[1] == 'all':
-						flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
-					elif isinstance(self.FLR[1], int):
-						x = sp.Symbol('x')
-						flr_exp = sp.besselj(1, x).series(x, 0, self.FLR[1] + 1).removeO()
-						flr2_coeff = -sqrt_nm * sp.lambdify(x, flr_exp)(self.rho * sqrt_nm) / self.rho
 				self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
 				self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
 				self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
