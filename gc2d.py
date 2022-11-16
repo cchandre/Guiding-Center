@@ -113,24 +113,20 @@ class GC2Dt:
 		vars = xp.split(y, 2 + self.check_energy)
 		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
-		dphidx, dphidy = fields[:2]
-		if self.GCorder == 2:
-			dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields[2:6]
-		if self.check_energy:
-			if self.GCorder == 1:
-				phi_1 = fields[2]
-			elif self.GCorder == 2:
-				phi_1, phi_2 = fields[6:8]
+		dphidx, dphidy = fields[:2]	
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 		if self.GCorder == 1:
 			if not self.check_energy:
 				return dy_gc
+			phi_1 = fields[2]
 			dk = (phi_1 * xp.exp(-1j * t)).real
 			return xp.concatenate((dy_gc, dk), axis=None)
+		dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields[2:6]
 		dy_gc += xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
 		if self.GCorder == 2:
 			if not self.check_energy:
 				return dy_gc
+			phi_1, phi_2 = fields[6:8]
 			dk = (phi_1 * xp.exp(-1j * t)).real + 2 * (phi_2 * xp.exp(-2j * t)).imag
 			return xp.concatenate((dy_gc, dk), axis=None)
 		raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
@@ -143,14 +139,12 @@ class GC2Dt:
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
 		vx, vy = vars[2:4]
 		dphidx, dphidy = fields[:2]
-		if self.check_energy:
-			k = vars[4]
-			phi = fields[2]
 		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		d_ = xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 		if not self.check_energy:
 			return d_
+		phi = fields[2]
 		dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
 		return xp.concatenate((d_, dk), axis=None)
 
