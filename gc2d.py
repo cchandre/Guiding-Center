@@ -148,7 +148,7 @@ class GC2Dt:
 		vars = xp.split(y, 4 + self.check_energy)
 		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
-		x_, y_, vx, vy = vars[:4]
+		vx, vy = vars[2:4]
 		dphidx, dphidy = fields[:2]
 		if self.check_energy:
 			k = vars[4]
