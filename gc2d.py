@@ -88,10 +88,13 @@ class GC2Dt:
 			flr1_coeff = 1
 		self.phi_gc1_1 = ifft2(flr1_coeff * fft_phi) * (self.N**2)
 		if self.Method.endswith('_ions'):
+			self.dim = 4
 			stack = self.derivs(self.phi)
 			if self.check_energy:
+				self.dim += 1
 				stack = (*stack, self.pad(self.phi))
 		else:
+			self.dim = 2
 			if self.GCorder == 1:
 				stack = self.derivs(self.phi_gc1_1)
 				if self.check_energy:
@@ -106,47 +109,44 @@ class GC2Dt:
 				self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
 				stack = (*self.derivs(self.phi_gc1_1), *self.derivs(self.phi_gc2_0), *self.derivs(self.phi_gc2_2))
 				if self.check_energy:
+					self.dim += 1
 					stack += (self.pad(self.phi_gc1_1), self.pad(self.phi_gc2_2))
 		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
 
-	def eqn_gc(self, t, y):
-		vars = xp.split(y, 2 + self.check_energy)
+	def eqn(self, t, y):
+		vars = xp.split(y, self.dim)
 		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
 		dphidx, dphidy = fields[:2]
-		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
-		if self.GCorder == 1:
+		if self.Method.endswith('_gc'):
+			dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
+			if self.GCorder == 1:
+				if not self.check_energy:
+					return dy_gc
+				phi = fields[2]
+				dk = (phi * xp.exp(-1j * t)).real
+				return xp.concatenate((dy_gc, dk), axis=None)
+			dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields[2:6]
+			dy_gc += xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
+			if self.GCorder == 2:
+				if not self.check_energy:
+					return dy_gc
+				phi1, phi2 = fields[6:8]
+				dk = (phi1 * xp.exp(-1j * t)).real + 2 * (phi2 * xp.exp(-2j * t)).imag
+				return xp.concatenate((dy_gc, dk), axis=None)
+			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
+		elif self.Method.endswith('_ions'):
+			if self.eta == 0 or self.rho == 0:
+				raise ValueError("Eta or Rho cannot be zero for eqn_ions")
+			vx, vy = vars[2:4]
+			dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
+			dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
+			d_ = xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 			if not self.check_energy:
-				return dy_gc
-			phi_1 = fields[2]
-			dk = (phi_1 * xp.exp(-1j * t)).real
-			return xp.concatenate((dy_gc, dk), axis=None)
-		dphidx_0, dphidy_0, dphidx_2, dphidy_2 = fields[2:6]
-		dy_gc += xp.concatenate((-dphidy_0.real + (dphidy_2 * xp.exp(-2j * t)).real, dphidx_0.real - (dphidx_2 * xp.exp(-2j * t)).real), axis=None)
-		if self.GCorder == 2:
-			if not self.check_energy:
-				return dy_gc
-			phi_1, phi_2 = fields[6:8]
-			dk = (phi_1 * xp.exp(-1j * t)).real + 2 * (phi_2 * xp.exp(-2j * t)).imag
-			return xp.concatenate((dy_gc, dk), axis=None)
-		raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
-
-	def eqn_ions(self, t, y):
-		if self.eta == 0 or self.rho == 0:
-			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
-		vars = xp.split(y, 4 + self.check_energy)
-		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
-		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
-		vx, vy = vars[2:4]
-		dphidx, dphidy = fields[:2]
-		dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
-		dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
-		d_ = xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
-		if not self.check_energy:
-			return d_
-		phi = fields[2]
-		dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
-		return xp.concatenate((d_, dk), axis=None)
+				return d_
+			phi = fields[2]
+			dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
+			return xp.concatenate((d_, dk), axis=None)
 
 	def compute_energy(self, t, *y, type='gc'):
 		r_ = xp.moveaxis(xp.asarray(y[:2]) % (2 * xp.pi), 0, -1)

@@ -122,77 +122,58 @@ def run_method(case):
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
-			if case.Method.endswith('_gc'):
-				sol = solve_ivp(case.eqn_gc, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
-				sol_ = xp.split(sol.y, 2 + case.check_energy)
-				x, y = sol_[:2]
-				if case.check_energy:
-					k = sol_[2]
-			elif case.Method.endswith('_ions'):
-				sol = solve_ivp(case.eqn_ions, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
-				sol_ = xp.split(sol.y, 4 + case.check_energy)
-				x, y, vx, vy = sol_[:4]
-				if case.check_energy:
-					k = sol_[4]
+			sol = solve_ivp(case.eqn, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
+			sol_ = xp.split(sol.y, case.dim)
+			x, y = sol_[:2]
 			if case.Method.endswith('_gc'):
 				untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			elif case.Method.endswith('_ions'):
-				untrapped = compute_untrapped(case.ions2gc(t_eval, sol_[:4]), thresh=case.threshold)
+				untrapped = compute_untrapped(case.ions2gc(t_eval, *sol_[:4]), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
-			if case.check_energy:
-				k_un, k_tr = k[untrapped, :], k[trapped, :]
 			if case.Method.endswith('_ions'):
+				vx, vy = sol_[2:4]
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
+			if case.check_energy:
+				k = sol_[-1]
+				k_un, k_tr = k[untrapped, :], k[trapped, :]
 		else:
-			if case.Method.endswith('_gc'):
-				sol = solve_ivp(case.eqn_gc, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
-				sol_ = xp.split(sol.y, 2 + case.check_energy)
-				x, y = sol_[:2]
-				if case.check_energy:
-					k = sol_[2]
-			elif case.Method.endswith('_ions'):
-				sol = solve_ivp(case.eqn_ions, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
-				sol_ = xp.split(sol.y, 4 + case.check_energy)
-				x, y, vx, vy = sol_[:4]
-				if case.check_energy:
-					k = sol_[4]
+			sol = solve_ivp(case.eqn, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
+			sol_ = xp.split(sol.y, case.dim)
+			x, y = sol_[:2]
 			if case.Method.endswith('_gc'):
 				untrapped = compute_untrapped((x, y), thresh=case.threshold)
 			elif case.Method.endswith('_ions'):
-				untrapped = compute_untrapped(case.ions2gc(t_eval[:case.Tmid+1], sol_[:4]), thresh=case.threshold)
+				untrapped = compute_untrapped(case.ions2gc(t_eval[:case.Tmid+1], *sol_[:4]), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
-			if case.check_energy:
-				k_un, k_tr = k[untrapped, :], k[trapped, :]
 			if case.Method.endswith('_ions'):
+				vx, vy = sol_[2:4]
 				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
 				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
+			if case.check_energy:
+				k = sol_[-1]
+				k_un, k_tr = k[untrapped, :], k[trapped, :]
 			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(untrapped.sum()))
 			if case.Method.endswith('_gc'):
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
-				sol = solve_ivp(case.eqn_gc, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
-				sol_ = xp.split(sol.y, 2 + case.check_energy)
-				x, y = sol_[:2]
-				if case.check_energy:
-					k = sol_[2]
 			elif case.Method.endswith('_ions'):
 				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx_un[:, -1], vy_un[:, -1]), axis=None)
-				sol = solve_ivp(case.eqn_ions, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
-				sol_ = xp.split(sol.y, 4 + case.check_energy)
-				x, y, vx, vy = sol_[:4]
-				if case.check_energy:
-					k = sol_[4]
+			sol = solve_ivp(case.eqn, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
+			sol_ = xp.split(sol.y, case.dim)
+			x, y = sol_[:2]
 			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
 			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
-			if case.check_energy:
-				k_un = xp.concatenate((k_un, k[:, 1:]), axis=1)
 			if case.Method.endswith('_ions'):
+				vx, vy = sol_[2:4]
 				vx_un = xp.concatenate((vx_un, vx[:, 1:]), axis=1)
 				vy_un = xp.concatenate((vy_un, vy[:, 1:]), axis=1)
+			if case.check_energy:
+				k = sol_[-1]
+				k_un = xp.concatenate((k_un, k[:, 1:]), axis=1)
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		if case.Method.startswith('poincare'):
 			if case.Method == 'poincare_gc':
