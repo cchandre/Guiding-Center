@@ -97,9 +97,9 @@ class GC2Dt:
 				if self.check_energy:
 					stack = (*stack, self.pad(self.phi_gc1_1))
 			elif self.GCorder == 2:
-				if self.FLR[1]:
+				if self.FLR[1] and (self.rho != 0):
 					flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
-				elif (not self.FLR[1]) or (self.rho == 0):
+				else:
 					flr2_coeff = -sqrt_nm**2 / 2
 				self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
 				self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
@@ -113,7 +113,7 @@ class GC2Dt:
 		vars = xp.split(y, 2 + self.check_energy)
 		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
-		dphidx, dphidy = fields[:2]	
+		dphidx, dphidy = fields[:2]
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 		if self.GCorder == 1:
 			if not self.check_energy:

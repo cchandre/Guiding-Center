@@ -134,7 +134,10 @@ def run_method(case):
 				x, y, vx, vy = sol_[:4]
 				if case.check_energy:
 					k = sol_[4]
-			untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			if case.Method.endswith('_gc'):
+				untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			elif case.Method.endswith('_ions'):
+				untrapped = compute_untrapped(case.ions2gc(t_eval, sol_[:4]), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
@@ -156,7 +159,10 @@ def run_method(case):
 				x, y, vx, vy = sol_[:4]
 				if case.check_energy:
 					k = sol_[4]
-			untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			if case.Method.endswith('_gc'):
+				untrapped = compute_untrapped((x, y), thresh=case.threshold)
+			elif case.Method.endswith('_ions'):
+				untrapped = compute_untrapped(case.ions2gc(t_eval[:case.Tmid+1], sol_[:4]), thresh=case.threshold)
 			trapped = xp.logical_not(untrapped)
 			x_un, y_un = x[untrapped, :], y[untrapped, :]
 			x_tr, y_tr = x[trapped, :], y[trapped, :]
