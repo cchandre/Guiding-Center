@@ -158,10 +158,11 @@ def run_method(case):
 				k = sol_[-1]
 				k_un, k_tr = k[untrapped, :], k[trapped, :]
 			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(untrapped.sum()))
-			if case.Method.endswith('_gc'):
-				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
-			elif case.Method.endswith('_ions'):
-				y0 = xp.concatenate((x_un[:, -1], y_un[:, -1], vx_un[:, -1], vy_un[:, -1]), axis=None)
+			y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
+			if case.Method.endswith('_ions'):
+				y0 = xp.concatenate((y0, vx_un[:, -1], vy_un[:, -1]), axis=None)
+			if case.check_energy:
+				y0 = xp.concatenate((y0, k_un[:, -1]), axis=None)
 			sol = solve_ivp(case.eqn, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 			sol_ = xp.split(sol.y, case.dim)
 			x, y = sol_[:2]
