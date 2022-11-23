@@ -84,7 +84,7 @@ class GC2Dt:
 		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
 		if self.FLR[0] == 'all':
 			flr1_coeff = jv(0, self.rho * sqrt_nm)
-		elif self.FLR[0] == 'padé':
+		elif self.FLR[0] == 'pade':
 			flr1_coeff = 1 / (1 + self.rho**2 * sqrt_nm**2 / 4)
 		else:
 			flr1_coeff = 1
@@ -104,7 +104,7 @@ class GC2Dt:
 			elif self.GCorder == 2:
 				if self.FLR[1] == 'all' and (self.rho != 0):
 					flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
-				elif self.FLR[1] == 'padé' and (self.rho != 0):
+				elif self.FLR[1] == 'pade' and (self.rho != 0):
 					flr2_coeff = -(sqrt_nm**2 / 2) / (1 + self.rho**2 * sqrt_nm**2 / 8)
 				else:
 					flr2_coeff = -sqrt_nm**2 / 2
@@ -228,7 +228,7 @@ class GC2Dk:
 		self.DictParams = dict
 		if self.FLR[0] == 'all':
 			flr1_coeff = jv(0, self.rho * sqrt_nm)
-		elif self.FLR[0] == 'padé':
+		elif self.FLR[0] == 'pade':
 			flr1_coeff = 1 / (1 + self.rho**2 * sqrt_nm**2 / 4)
 		else:
 			flr1_coeff = 1
