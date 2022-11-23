@@ -82,8 +82,10 @@ class GC2Dt:
 		self.phi = ifft2(fft_phi) * (self.N**2)
 		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
 		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
-		if self.FLR[0]:
+		if self.FLR[0] == 'all':
 			flr1_coeff = jv(0, self.rho * sqrt_nm)
+		elif self.FLR[0] == 'padé':
+			flr1_coeff = 1 / (1 + self.rho**2 * sqrt_nm**2 / 4)
 		else:
 			flr1_coeff = 1
 		self.phi_gc1_1 = ifft2(flr1_coeff * fft_phi) * (self.N**2)
@@ -100,8 +102,10 @@ class GC2Dt:
 				if self.check_energy:
 					stack = (*stack, self.pad(self.phi_gc1_1))
 			elif self.GCorder == 2:
-				if self.FLR[1] and (self.rho != 0):
+				if self.FLR[1] == 'all' and (self.rho != 0):
 					flr2_coeff = -sqrt_nm * jv(1, self.rho * sqrt_nm) / self.rho
+				elif self.FLR[1] == 'padé' and (self.rho != 0):
+					flr2_coeff = -(sqrt_nm**2 / 2) / (1 + self.rho**2 * sqrt_nm**2 / 8)
 				else:
 					flr2_coeff = -sqrt_nm**2 / 2
 				self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
@@ -222,27 +226,18 @@ class GC2Dk:
 		for key in dict:
 			setattr(self, key, dict[key])
 		self.DictParams = dict
-		if (self.FLR[0] == 'none') or (self.FLR[0] in range(2)):
-			flr1_coeff = 1
-		elif self.FLR[0] == 'all':
-			flr1_coeff = jv(0, self.rho * xp.sqrt(2))
-		elif isinstance(self.FLR[0], int):
-			x = sp.Symbol('x')
-			flr_exp = sp.besselj(0, x).series(x, 0, self.FLR[0] + 1).removeO()
-			flr1_coeff = sp.lambdify(x, flr_exp)(self.rho * xp.sqrt(2))
-		self.A1 = self.A * flr1_coeff
-		if (self.FLR[1] == 'none') or (self.FLR[1] in range(2)) or (self.rho == 0):
-			flr2_coeff20, flr2_coeff22 = 0, -1
+		if self.FLR[0] == 'all':
+			flr1_coeff = jv(0, self.rho * sqrt_nm)
+		elif self.FLR[0] == 'padé':
+			flr1_coeff = 1 / (1 + self.rho**2 * sqrt_nm**2 / 4)
 		else:
-			if self.FLR[1] == 'all':
-				flr2_coeff20 = -2 * (jv(1, self.rho * 2) - xp.sqrt(2) *  jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
-				flr2_coeff22 = -xp.sqrt(2) * (jv(1, self.rho * 2 * xp.sqrt(2)) - jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
-			elif isinstance(self.FLR[1], int):
-				x = sp.Symbol('x')
-				flr2_exp20 = -2 * ((sp.besselj(1, 2 * x) - sp.sqrt(2) * sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.FLR[1] + 1).removeO()
-				flr2_exp22 = -sp.sqrt(2) * ((sp.besselj(1, 2 * sp.sqrt(2) * x) - sp.besselj(0, sp.sqrt(2) * x) * sp.besselj(1, sp.sqrt(2) * x)) / x).series(x, 0, self.FLR[1] + 1).removeO()
-				flr2_coeff20 = sp.lambdify(x, flr2_exp20)(self.rho)
-				flr2_coeff22 = sp.lambdify(x, flr2_exp22)(self.rho)
+			flr1_coeff = 1
+		self.A1 = self.A * flr1_coeff
+		if self.FLR[1] == 'all':
+			flr2_coeff20 = -2 * (jv(1, self.rho * 2) - xp.sqrt(2) *  jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
+			flr2_coeff22 = -xp.sqrt(2) * (jv(1, self.rho * 2 * xp.sqrt(2)) - jv(0, self.rho * xp.sqrt(2)) * jv(1, self.rho * xp.sqrt(2))) / self.rho
+		else:
+			flr2_coeff20, flr2_coeff22 = 0, -1
 		self.A20 = -(self.A**2) * self.eta * flr2_coeff20
 		self.A22 = -(self.A**2) * self.eta * flr2_coeff22
 

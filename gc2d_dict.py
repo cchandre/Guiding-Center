@@ -7,7 +7,7 @@ import numpy as xp
 Potential = 'turbulent'
 Method = 'poincare_ions'
 
-FLR = (True, True)
+FLR = ('all', 'all')
 
 A = 0.7
 rho = 0.25
@@ -34,10 +34,10 @@ darkmode = True
 ###################################################################################################
 ##                              DO NOT EDIT BELOW                                                ##
 ###################################################################################################
-if (not FLR[0]) and (not FLR[1]):
+if (FLR[0] == 'none') and (FLR[1] == 'none'):
 	rho = 0
 if xp.all((rho == 0)):
-	FLR = (False, False)
+	FLR = ('none', 'none')
 if xp.all((eta == 0)):
 	GCorder = 1
 else:
