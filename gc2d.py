@@ -227,9 +227,9 @@ class GC2Dk:
 			setattr(self, key, dict[key])
 		self.DictParams = dict
 		if self.FLR[0] == 'all':
-			flr1_coeff = jv(0, self.rho * sqrt_nm)
+			flr1_coeff = jv(0, self.rho * xp.sqrt(2))
 		elif self.FLR[0] == 'pade':
-			flr1_coeff = 1 / (1 + self.rho**2 * sqrt_nm**2 / 4)
+			flr1_coeff = 1 / (1 + self.rho**2 / 2)
 		else:
 			flr1_coeff = 1
 		self.A1 = self.A * flr1_coeff
