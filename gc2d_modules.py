@@ -41,9 +41,9 @@ import os
 
 def run_method(case):
 	if case.darkmode:
-		cs = ['k', 'w', 'c', 'm']
+		cs = ['k', 'w', 'c', 'm', 'r']
 	else:
-		cs = ['w', 'k', 'b', 'm']
+		cs = ['w', 'k', 'b', 'm', 'r']
 	if case.PlotResults:
 		plt.rc('figure', facecolor=cs[0], titlesize=30, figsize=[8,8])
 		plt.rc('text', usetex=True, color=cs[1])
@@ -203,19 +203,20 @@ def run_method(case):
 					info += ' / h_untrapped / h_trapped'
 			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
+				print(define_type((x_un, y_un)))
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				ax.grid(case.grid)
 				if case.modulo:
 					if case.Method == 'poincare_gc':
-						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
+						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
 					elif case.Method == "poincare_ions":
-						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[2], markersize=1, markeredgecolor='none')
-						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[3], markersize=1, markeredgecolor='none')
-						ax.plot(x_gc_un % (2 * xp.pi), y_gc_un % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_gc_tr % (2 * xp.pi), y_gc_tr % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
+						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[2], markersize=1, markeredgecolor='none')
+						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[3], markersize=1, markeredgecolor='none')
+						ax.plot(x_gc_tr % (2 * xp.pi), y_gc_tr % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_gc_un % (2 * xp.pi), y_gc_un % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
 					ax.set_xlim(0, 2 * xp.pi)
 					ax.set_ylim(0, 2 * xp.pi)
 					ax.set_xticks([0, xp.pi, 2 * xp.pi])
@@ -224,13 +225,13 @@ def run_method(case):
 					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
 				if not case.modulo:
 					if case.Method == 'poincare_gc':
-						ax.plot(x_un, y_un, '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=3, markeredgecolor='none')
+						ax.plot(x_tr, y_tr, '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_un, y_un, '.', color=cs[3], markersize=3, markeredgecolor='none')
 					elif case.Method == "poincare_ions":
-						ax.plot(x_un, y_un, '.', color=cs[2], markersize=1, markeredgecolor='none')
-						ax.plot(x_tr, y_tr, '.', color=cs[3], markersize=1, markeredgecolor='none')
-						ax.plot(x_gc_un, y_gc_un, '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_gc_tr, y_gc_tr, '.', color=cs[3], markersize=3, markeredgecolor='none')
+						ax.plot(x_tr, y_tr, '.', color=cs[2], markersize=1, markeredgecolor='none')
+						ax.plot(x_un, y_un, '.', color=cs[3], markersize=1, markeredgecolor='none')
+						ax.plot(x_gc_tr, y_gc_tr, '.', color=cs[2], markersize=3, markeredgecolor='none')
+						ax.plot(x_gc_un, y_gc_un, '.', color=cs[3], markersize=3, markeredgecolor='none')
 					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='r', lw=2))
 					ax.set_aspect('equal')
 				if case.SaveData:
@@ -280,6 +281,13 @@ def run_method(case):
 def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
 	return xp.where(vec==True, *output)
+
+def define_type(x, thresh=0):
+	output = xp.ones((1, x[0][:, 0].size))
+	vec = [xel.ptp(axis=1)**2 for xel in x]
+	output[xp.sqrt(xp.sum(vec, axis=0)) <= thresh] = 0
+	output[vec[0] >= thresh * vec[1] or vec[1] >= thresh * vec[0]] = 2
+	return output
 
 def compute_r2(case, teval, x, y):
 	func_fit = lambda t, a, b: (a * t)**b
