@@ -203,7 +203,7 @@ def run_method(case):
 					info += ' / h_untrapped / h_trapped'
 			save_data(case, data, filestr, info=info)
 			if case.PlotResults:
-				print(define_type((x_un, y_un)))
+				print(define_type((x_un, y_un), thresh=case.threshold))
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
@@ -285,8 +285,10 @@ def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
 def define_type(x, thresh=0):
 	output = xp.ones((1, x[0][:, 0].size))
 	vec = [xel.ptp(axis=1)**2 for xel in x]
-	output[xp.sqrt(xp.sum(vec, axis=0)) <= thresh] = 0
-	output[vec[0] >= thresh * vec[1] or vec[1] >= thresh * vec[0]] = 2
+	if xp.any(xp.sqrt(xp.sum(vec, axis=0)) <= thresh):
+		output[xp.sqrt(xp.sum(vec, axis=0)) <= thresh] = 0
+	output[vec[0] / vec[1] >= thresh] = 2
+	output[vec[1] / vec[0] >= thresh] = 2
 	return output
 
 def compute_r2(case, teval, x, y):
