@@ -30,7 +30,6 @@ import matplotlib.pyplot as plt
 from numpy.fft import fft2, ifft2, ifftn, fftfreq
 from scipy.interpolate import interpn
 from scipy.special import jv, eval_chebyu
-import sympy as sp
 from gc2d_modules import run_method
 from gc2d_dict import dict_list, Parallelization
 import multiprocessing
@@ -62,7 +61,7 @@ class GC2Dt:
 	def __str__(self):
 		if self.Method.endswith('_ions'):
 			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the ions".format(self=self)
-		elif self.Method.endswith('_gc'):
+		elif self.Method.endswith('_gc') or self.Method == 'potentials':
 			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
 
 	def __init__(self, dict):
