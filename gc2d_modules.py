@@ -194,24 +194,24 @@ def run_method(case):
 			n_trapped = Trapped.size
 			n_diffusive = Diffusive.size
 			n_ballistic = Ballistic.size
-			vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, n_diffusive / case.Ntraj]
+			vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj]
 			print("\033[96m          trapped particles = {} \033[00m".format(n_trapped))
-			for traj in ['Diffusive', 'Ballistic']:
+			for traj in [Diffusive, Ballistic]:
 				if traj.size:
-					print("\033[96m          {} particles ({}) : D = {:.6f}  /  interp = (".format(traj.type, n_diffusive, traj.diff_data[0]) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + ")\033[00m")
+					print("\033[96m          {} particles ({}) : D = {:.6f}  /  interp = (".format(traj.type, traj.size, traj.diff_data[0]) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + ")\033[00m")
 					print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(traj.diff_data[1]**2, traj.interp_data[1]))
-					vec_data.expend([traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
+					vec_data.expend([traj.size / case.Ntraj, traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
-				file.writelines('%  A        rho      eta    trapped   diffusive  D_d     a_d      b_d   R2_d(diff) R2_d(interp)   D_b     a_b     b_b   R2_b(diff)  R2_b(interp)' + '\n')
+				file.writelines('%  A        rho      eta    trapped   diffusive  D_d     a_d      b_d   R2_d(diff) R2_d(interp)   ballistic  D_b     a_b     b_b   R2_b(diff)  R2_b(interp)' + '\n')
 			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 			file.close()
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$t$')
 				ax.set_ylabel('$r^2$')
-				for traj in ['Diffusive', 'Ballistic']:
+				for traj in [Diffusive, Ballistic]:
 					plt.plot(traj.t[:-1], traj.r2, ':', color=traj.color, lw=1)
 					plt.plot(traj.t_win, traj.r2_win, '-', color=traj.color, lw=2)
 					plt.plot(traj.t_win, traj.r2_fit, '-.', color=traj.color, lw=2)
