@@ -191,16 +191,13 @@ def run_method(case):
 					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
 				plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
-			n_trapped = Trapped.size
-			n_diffusive = Diffusive.size
-			n_ballistic = Ballistic.size
-			vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj]
-			print("\033[96m          trapped particles = {} \033[00m".format(n_trapped))
+			vec_data = [case.A, case.rho, case.eta, Trapped.size / case.Ntraj]
+			print("\033[96m          trapped particles = {} \033[00m".format(Trapped.size))
 			for traj in [Diffusive, Ballistic]:
 				if traj.size:
 					print("\033[96m          {} particles ({}) : D = {:.6f}  /  interp = (".format(traj.type, traj.size, traj.diff_data[0]) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + ")\033[00m")
 					print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(traj.diff_data[1]**2, traj.interp_data[1]))
-					vec_data.expend([traj.size / case.Ntraj, traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
+					vec_data.extend([traj.size / case.Ntraj, traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
