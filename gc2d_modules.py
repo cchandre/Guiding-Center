@@ -106,7 +106,6 @@ def run_method(case):
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
 	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
-		order_mu = 1
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
@@ -124,180 +123,130 @@ def run_method(case):
 		if not case.TwoStepIntegration:
 			sol = solve_ivp(case.eqn, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 			sol_ = xp.split(sol.y, case.dim)
-			x, y = sol_[:2]
-			if case.Method.endswith('_gc'):
-				untrapped = compute_untrapped((x, y), thresh=case.threshold)
-			elif case.Method.endswith('_ions'):
-				untrapped = compute_untrapped(case.ions2gc(t_eval, *sol_[:4]), thresh=case.threshold)
-			trapped = xp.logical_not(untrapped)
-			x_un, y_un = x[untrapped, :], y[untrapped, :]
-			x_tr, y_tr = x[trapped, :], y[trapped, :]
-			if case.Method.endswith('_ions'):
-				vx, vy = sol_[2:4]
-				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
-				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
-			if case.check_energy:
-				k = sol_[-1]
-				k_un, k_tr = k[untrapped, :], k[trapped, :]
+			Trapped = Trajectory(case, t_eval, sol_, 'trap')
+			Diffusive = Trajectory(case, t_eval, sol_, 'diff')
+			Ballistic = Trajectory(case, t_eval, sol_, 'ball')
 		else:
 			sol = solve_ivp(case.eqn, (0, t_eval[case.Tmid]), y0, t_eval=t_eval[:case.Tmid+1], max_step=case.TimeStep, atol=1, rtol=1)
 			sol_ = xp.split(sol.y, case.dim)
-			x, y = sol_[:2]
-			if case.Method.endswith('_gc'):
-				untrapped = compute_untrapped((x, y), thresh=case.threshold)
-			elif case.Method.endswith('_ions'):
-				untrapped = compute_untrapped(case.ions2gc(t_eval[:case.Tmid+1], *sol_[:4]), thresh=case.threshold)
-			trapped = xp.logical_not(untrapped)
-			x_un, y_un = x[untrapped, :], y[untrapped, :]
-			x_tr, y_tr = x[trapped, :], y[trapped, :]
+			Trapped = Trajectory(case, t_eval[:case.Tmid+1], sol_, 'trapped')
+			Untrapped = Trajectory(case, t_eval[:case.Tmid+1], sol_, 'untrapped')
+			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(Untrapped.x[:, 0].size))
+			y0 = xp.concatenate((Untrapped.x[:, -1], Untrapped.y[:, -1]), axis=None)
 			if case.Method.endswith('_ions'):
-				vx, vy = sol_[2:4]
-				vx_un, vy_un = vx[untrapped, :], vy[untrapped, :]
-				vx_tr, vy_tr = vx[trapped, :], vy[trapped, :]
+				y0 = xp.concatenate((y0, Untrapped.vx[:, -1], Untrapped.vy[:, -1]), axis=None)
 			if case.check_energy:
-				k = sol_[-1]
-				k_un, k_tr = k[untrapped, :], k[trapped, :]
-			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(untrapped.sum()))
-			y0 = xp.concatenate((x_un[:, -1], y_un[:, -1]), axis=None)
-			if case.Method.endswith('_ions'):
-				y0 = xp.concatenate((y0, vx_un[:, -1], vy_un[:, -1]), axis=None)
-			if case.check_energy:
-				y0 = xp.concatenate((y0, k_un[:, -1]), axis=None)
+				y0 = xp.concatenate((y0, Untrapped.k[:, -1]), axis=None)
 			sol = solve_ivp(case.eqn, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 			sol_ = xp.split(sol.y, case.dim)
 			x, y = sol_[:2]
-			x_un = xp.concatenate((x_un, x[:, 1:]), axis=1)
-			y_un = xp.concatenate((y_un, y[:, 1:]), axis=1)
+			Untrapped.x = xp.concatenate((Untrapped.x, x[:, 1:]), axis=1)
+			Untrapped.y = xp.concatenate((Untrapped.y, y[:, 1:]), axis=1)
+			vec_un = (Untrapped.x, Untrapped.y)
 			if case.Method.endswith('_ions'):
 				vx, vy = sol_[2:4]
-				vx_un = xp.concatenate((vx_un, vx[:, 1:]), axis=1)
-				vy_un = xp.concatenate((vy_un, vy[:, 1:]), axis=1)
+				Untrapped.vx = xp.concatenate((Untrapped.vx, vx[:, 1:]), axis=1)
+				Untrapped.vy = xp.concatenate((Untrapped.vy, vy[:, 1:]), axis=1)
+				vec_un += (Untrapped.vx, Untrapped.vy)
 			if case.check_energy:
 				k = sol_[-1]
-				k_un = xp.concatenate((k_un, k[:, 1:]), axis=1)
+				Untrapped.k = xp.concatenate((Untrapped.k, k[:, 1:]), axis=1)
+				vec_un += (Untrapped.k,)
+			Diffusive = Trajectory(case, t_eval, vec_un, 'diff')
+			Ballistic = Trajectory(case, t_eval, vec_un, 'ball')
+		data = [Trapped, Diffusive, Ballistic]
+		info = 'Trapped / Diffusive / Ballistic'
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
-		if case.Method.startswith('poincare'):
-			if case.Method == 'poincare_gc':
-				data = xp.array([x_un, y_un, x_tr, y_tr], dtype=object)
-				info = 'x_untrapped / y_untrapped / x_trapped / y_trapped'
-				if case.check_energy:
-					h_un = case.compute_energy(t_eval, x_un, y_un, k_un, type='gc')
-					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, k_tr, type='gc')
-					h_un = ((h_un.T - h_un[:, 0]) / h_un[:, 0]).T
-					h_tr = ((h_tr.T - h_tr[:, 0]) / h_tr[:, 0]).T
-					data = xp.array([*data, h_un, h_tr], dtype=object)
-					info += ' / h_untrapped / h_trapped'
-			elif case.Method == 'poincare_ions':
-				x_gc_un, y_gc_un = case.ions2gc(t_eval, x_un, y_un, vx_un, vy_un, order=1)
-				x_gc_tr, y_gc_tr = case.ions2gc(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, order=1)
-				mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=order_mu)
-				mu_tr = case.compute_mu(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
-				data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr], dtype=object)
-				info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped'
-				if case.check_energy:
-					h_un = case.compute_energy(t_eval, x_un, y_un, vx_un, vy_un, k_un, type='ions')
-					h_tr = case.compute_energy(t_eval[:case.Tmid+1], x_tr, y_tr, vx_tr, vy_tr, k_tr, type='ions')
-					h_un = ((h_un.T - h_un[:, 0]) / h_un[:, 0]).T
-					h_tr = ((h_tr.T - h_tr[:, 0]) / h_tr[:, 0]).T
-					data = xp.array([*data, h_un, h_tr], dtype=object)
-					info += ' / h_untrapped / h_trapped'
-			save_data(case, data, filestr, info=info)
-			if case.PlotResults:
-				print(define_type((x_un, y_un), thresh=case.threshold))
+		if case.Method.startswith('poincare') and case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
 				ax.set_ylabel('$y$')
 				ax.grid(case.grid)
 				if case.modulo:
 					if case.Method == 'poincare_gc':
-						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
+						for traj in [Trapped, Diffusive, Ballistic]:
+							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
 					elif case.Method == "poincare_ions":
-						ax.plot(x_tr % (2 * xp.pi), y_tr % (2 * xp.pi), '.', color=cs[2], markersize=1, markeredgecolor='none')
-						ax.plot(x_un % (2 * xp.pi), y_un % (2 * xp.pi), '.', color=cs[3], markersize=1, markeredgecolor='none')
-						ax.plot(x_gc_tr % (2 * xp.pi), y_gc_tr % (2 * xp.pi), '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_gc_un % (2 * xp.pi), y_gc_un % (2 * xp.pi), '.', color=cs[3], markersize=3, markeredgecolor='none')
+						for traj in [Trapped, Diffusive, Ballistic]:
+							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=1, markeredgecolor='none')
+							ax.plot(traj.x_gc % (2 * xp.pi), traj.y_gc % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
 					ax.set_xlim(0, 2 * xp.pi)
 					ax.set_ylim(0, 2 * xp.pi)
 					ax.set_xticks([0, xp.pi, 2 * xp.pi])
 					ax.set_yticks([0, xp.pi, 2 * xp.pi])
 					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
-				if not case.modulo:
+				elif not case.modulo:
 					if case.Method == 'poincare_gc':
-						ax.plot(x_tr, y_tr, '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_un, y_un, '.', color=cs[3], markersize=3, markeredgecolor='none')
+						for traj in [Trapped, Diffusive, Ballistic]:
+							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=3, markeredgecolor='none')
 					elif case.Method == "poincare_ions":
-						ax.plot(x_tr, y_tr, '.', color=cs[2], markersize=1, markeredgecolor='none')
-						ax.plot(x_un, y_un, '.', color=cs[3], markersize=1, markeredgecolor='none')
-						ax.plot(x_gc_tr, y_gc_tr, '.', color=cs[2], markersize=3, markeredgecolor='none')
-						ax.plot(x_gc_un, y_gc_un, '.', color=cs[3], markersize=3, markeredgecolor='none')
-					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='r', lw=2))
+						for traj in [Trapped, Diffusive, Ballistic]:
+							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=1, markeredgecolor='none')
+							ax.plot(traj.x_gc, traj.y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
+					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='g', lw=2))
 					ax.set_aspect('equal')
 				if case.SaveData:
 					fig.savefig(filestr + '.png', dpi=case.dpi)
 					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
 				plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
-			if untrapped.sum() <= 5:
-				print("\033[33m          Warning: not enough untrapped trajectories ({}) \033[00m".format(untrapped.sum()))
-			else:
-				t, t_win, r2, r2_win, r2_fit, slope, popt, rvalue, R2 = compute_r2(case, t_eval, x_un, y_un)
-				n_trapped = xp.logical_not(untrapped).sum()
-				print("\033[96m          trapped particles = {} \033[00m".format(n_trapped))
-				print("\033[96m          diffusion data : D = {:.6f}  /  interp = '.format(res.slope) + ', '.join(['{:.6f}'.format(p) for p in popt]) + '\033[00m")
-				print("\033[96m              with R2        = {:.6f}  /  {:.6f} \033[00m".format(rvalue**2, R2))
-				vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, slope, *popt, rvalue**2, R2]
-				file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
-				if os.path.getsize(file.name) == 0:
-					file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
-					file.writelines('%  A        rho      eta    trapped     D       a        b     R2(diff)   R2(interp)' + '\n')
-				file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
-				file.close()
-				if case.Method == 'diffusion_gc':
-					data = xp.array([x_un, y_un, x_tr, y_tr, t, r2], dtype=object)
-					info = 'x_untrapped / y_untrapped / x_trapped / y_trapped / t / r2'
-				elif case.Method == 'diffusion_ions':
-					x_gc_un, y_gc_un = case.ions2gc(x_un, y_un, vx_un, vy_un, order=1)
-					x_gc_tr, y_gc_tr = case.ions2gc(x_tr, y_tr, vx_tr, vy_tr, order=1)
-					mu_un = case.compute_mu(t_eval, x_un, y_un, vx_un, vy_un, order=order_mu)
-					mu_tr = case.compute_mu(t_eval, x_tr, y_tr, vx_tr, vy_tr, order=order_mu)
-					t, t_win, r2_gc, r2_win_gc, r2_fit_gc, slope_gc, popt_gc, rvalue_gc, R2_gc = compute_r2(case, t_eval, x_gc_un, y_gc_un)
-					data = xp.array([x_un, y_un, vx_un, vy_un, x_tr, y_tr, vx_tr, vy_tr, x_gc_un, y_gc_un, x_gc_tr, y_gc_tr, mu_un, mu_tr, t, r2, r2_gc], dtype=object)
-					info = 'x_untrapped / y_untrapped / vx_untrapped / vy_untrapped / x_trapped / y_trapped / vx_trapped / vy_trapped / x_gc_untrapped / y_gc_untrapped / x_gc_trapped / y_gc_trapped / mu_untrapped / mu_trapped / t / r2 / r2_gc'
-				save_data(case, data, filestr, info=info)
-				if case.PlotResults:
-					fig, ax = plt.subplots(1, 1)
-					ax.set_xlabel('$t$')
-					ax.set_ylabel('$r^2$')
-					plt.plot(t, r2, cs[1], lw=1)
-					plt.plot(t_win, r2_win, cs[2], lw=2)
-					plt.plot(t_win, r2_fit, cs[3], lw=2)
-					if case.SaveData:
-						fig.savefig(filestr + '.png', dpi=case.dpi)
-						print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
-					plt.pause(0.5)
+			n_trapped = Trapped.x[:, 0].size
+			n_diffusive = Diffusive.x[:, 0].size
+			n_ballistic = Ballistic.x[:, 0].size
+			t, t_win, r2_d, r2_win_d, r2_fit_d, slope_d, popt_d, rvalue_d, R2_d = compute_r2(case, Diffusive)
+			print("\033[96m          trapped particles = {} \033[00m".format(n_trapped))
+			print("\033[96m          diffusive particles ({}) : D = {:.6f}  /  interp = (".format(n_diffusive, slope_d) + ", ".join(["{:.6f}".format(p) for p in popt_d]) + ")\033[00m")
+			print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(rvalue_d**2, R2_d))
+			vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, n_diffusive / case.Ntraj, slope_d, *popt_d, rvalue_d**2, R2_d]
+			data = xp.array([*data, t, r2_d], dtype=object)
+			info += ' / t / r2_d'
+			if n_ballistic:
+				t, t_win, r2_b, r2_win_b, r2_fit_b, slope_b, popt_b, rvalue_b, R2_b = compute_r2(case, Ballistic)
+				print("\033[96m          ballistic particles ({}) : D = {:.6f}  /  interp = (".format(n_ballistic, slope_b) + ", ".join(["{:.6f}".format(p) for p in popt_b]) + ")\033[00m")
+				print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(rvalue_b**2, R2_b))
+				vec_data.extend([slope_b, *popt_b, rvalue_b**2, R2_b])
+				data = xp.array([*data, r2_b], dtype=object)
+				info += ' / r2_b'
+			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
+			if os.path.getsize(file.name) == 0:
+				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
+				file.writelines('%  A        rho      eta    trapped   diffusive  D_d     a_d      b_d   R2_d(diff) R2_d(interp)   D_b     a_b     b_b   R2_b(diff)  R2_b(interp)' + '\n')
+			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
+			file.close()
+			if case.PlotResults:
+				fig, ax = plt.subplots(1, 1)
+				ax.set_xlabel('$t$')
+				ax.set_ylabel('$r^2$')
+				plt.plot(t, r2_d, ':', color=cs[3], lw=1)
+				plt.plot(t_win, r2_win_d, '-', color=cs[3], lw=2)
+				plt.plot(t_win, r2_fit_d, '-.', color=cs[3], lw=2)
+				if n_ballistic:
+					plt.plot(t, r2_b, ':', color=cs[4], lw=1)
+					plt.plot(t_win, r2_win_b, '-', color=cs[4], lw=2)
+					plt.plot(t_win, r2_fit_b, '-.', color=cs[4], lw=2)
+				if case.SaveData:
+					fig.savefig(filestr + '.png', dpi=case.dpi)
+					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
+				plt.pause(0.5)
+		save_data(case, data, filestr, info=info)
 
-def compute_untrapped(x, thresh=0, axis=1, output=[True, False]):
-	vec = xp.sqrt(xp.sum([xel.ptp(axis=axis)**2 for xel in x], axis=0)) > thresh
-	return xp.where(vec==True, *output)
+def define_type(case, x, axis=1, output=[0, 1, 2]):
+	vec = xp.repeat(output[1], x[0][:, 0].size)
+	delta = [xel.ptp(axis=axis)**2 for xel in x[:2]]
+	vec[xp.sqrt(xp.sum(delta, axis=0)) <= case.threshold] = output[0]
+	vec[delta[0] / delta[1] > case.threshold**2] = output[2]
+	vec[delta[1] / delta[0] > case.threshold**2] = output[2]
+	return vec
 
-def define_type(x, thresh=0):
-	output = xp.ones((1, x[0][:, 0].size))
-	vec = [xel.ptp(axis=1)**2 for xel in x]
-	if xp.any(xp.sqrt(xp.sum(vec, axis=0)) <= thresh):
-		output[xp.sqrt(xp.sum(vec, axis=0)) <= thresh] = 0
-	output[vec[0] / vec[1] >= thresh] = 2
-	output[vec[1] / vec[0] >= thresh] = 2
-	return output
-
-def compute_r2(case, teval, x, y):
+def compute_r2(case, traj):
 	func_fit = lambda t, a, b: (a * t)**b
+	x, y = (traj.x, traj.y) if case.Method.endswith('_gc') else (traj.x_gc, traj.y_gc)
 	r2 = xp.zeros(case.Tf)
 	for t in range(case.Tf):
 		r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
-	t = teval[:-1]
-	t_win, r2_win = teval[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
+	t = traj.t[:-1]
+	t_win, r2_win = traj.t[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
 	popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
 	res = linregress(t_win, r2_win)
 	r2_fit = func_fit(t_win, *popt)
@@ -311,3 +260,29 @@ def save_data(case, data, filestr, info=[]):
 		mdic.update({'date': date.today().strftime(" %B %d, %Y\n"), 'author': 'cristel.chandre@cnrs.fr'})
 		savemat(filestr + '.mat', mdic)
 		print("\033[90m        Results saved in {}.mat \033[00m".format(filestr))
+
+class Trajectory:
+	def __init__(self, case, t, x, type):
+		if type in ['trap', 'diff', 'ball']:
+			type_ = define_type(case, x, output=['trap', 'diff', 'ball'])
+		elif type in ['trapped', 'untrapped']:
+			type_ = define_type(case, x, output=['trapped', 'untrapped', 'untrapped'])
+		self.t, self.x, self.y = t, x[0][type_==type, :], x[1][type_==type, :]
+		if case.Method.endswith('_ions'):
+			self.vx, self.vy = x[2][type_==type, :], x[3][type_==type, :]
+			x_gc, y_gc = case.ions2gc(t, *x)
+			self.x_gc, self.y_gc = x_gc[type_==type, :], y_gc[type_==type, :]
+		if case.check_energy:
+			self.k = x[-1][type_==type, :]
+			h = case.compute_energy(t, *x)
+			h = ((h.T - h[:, 0]) / h[:, 0]).T
+			self.h = h[type_==type, :]
+		if case.check_mu:
+			mu = case.compute_mu(t, *x)
+			self.mu = mu[type_==type, :]
+		if case.darkmode:
+			cs = ['k', 'w', 'c', 'm', 'r']
+		else:
+			cs = ['w', 'k', 'b', 'm', 'r']
+		self.color = {type in ['trap', 'trapped']: cs[2], type in ['diff', 'untrapped']: cs[3], type == 'ball': cs[4]}.get(True, cs[1])
+		self.type = type

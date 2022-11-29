@@ -10,16 +10,17 @@ Method = 'poincare_gc'
 FLR = ('all', 'all')
 
 A = 0.7
-rho = 0.25
+rho = 0.2
 eta = 0.05
 
 Ntraj = 100
 Tf = 500
 threshold = 4
-TwoStepIntegration = False
-Tmid = 1000
-TimeStep = 5e-3  # recommended values (gc: 5e-3, ions: 5e-4)
+TwoStepIntegration = True
+Tmid = 100
+TimeStep = 5e-2  # recommended values (gc: 5e-3, ions: 5e-4)
 check_energy = False
+check_mu = False
 init = 'fixed'
 modulo = False
 grid = False
@@ -42,6 +43,8 @@ if xp.all((eta == 0)):
 	GCorder = 1
 else:
 	GCorder = 2
+if Method.endswith('_gc'):
+	check_mu = False
 val_params = xp.meshgrid(A, rho, eta, indexing='ij')
 num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
@@ -65,6 +68,7 @@ for _, dict in enumerate(dict_list):
 		'init': init,
 		'TimeStep': TimeStep,
 		'check_energy': check_energy,
+		'check_mu': check_mu,
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,
 		'dpi': dpi,
@@ -72,5 +76,5 @@ for _, dict in enumerate(dict_list):
 	if Potential == 'KMdCN':
 		dict.update({'M': 5})
 	elif Potential == 'turbulent':
-		dict.update({'M': 25, 'N': 2**12})
+		dict.update({'M': 25, 'N': 2**10})
 ###################################################################################################

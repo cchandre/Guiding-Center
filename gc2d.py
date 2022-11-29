@@ -151,10 +151,10 @@ class GC2Dt:
 			dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
 			return xp.concatenate((d_, dk), axis=None)
 
-	def compute_energy(self, t, *y, type='gc'):
+	def compute_energy(self, t, *y):
 		r_ = xp.moveaxis(xp.asarray(y[:2]) % (2 * xp.pi), 0, -1)
 		k = y[-1]
-		if type == 'gc':
+		if self.dim <= 3:
 			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r_)
 			h = k + (phi_1 * xp.exp(-1j * t)).imag
 			if self.GCorder == 1:
@@ -165,14 +165,14 @@ class GC2Dt:
 				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
 				return h
 			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
-		elif type == 'ions':
+		else:
 			vx, vy = y[2:4]
 			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r_) * xp.exp(-1j * t)).imag / (2 * self.eta)
 			return h
 		raise ValueError("Error of type in compute_energy")
 
 	def ions2gc(self, t, *y, order=1):
-		x_, y_, vx, vy = y
+		x_, y_, vx, vy = y[:4]
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
 		x_gc, y_gc = x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
@@ -188,7 +188,7 @@ class GC2Dt:
 		raise ValueError("ions2gc not available at order {}".format(order))
 
 	def compute_mu(self, t, *y, order=1):
-		x_, y_, vx, vy = y
+		x_, y_, vx, vy = y[:4]
 		r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
