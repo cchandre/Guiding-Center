@@ -191,23 +191,16 @@ def run_method(case):
 					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
 				plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
-			n_trapped = Trapped.x[:, 0].size
-			n_diffusive = Diffusive.x[:, 0].size
-			n_ballistic = Ballistic.x[:, 0].size
-			t, t_win, r2_d, r2_win_d, r2_fit_d, slope_d, popt_d, rvalue_d, R2_d = compute_r2(case, Diffusive)
+			n_trapped = Trapped.size
+			n_diffusive = Diffusive.size
+			n_ballistic = Ballistic.size
+			vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, n_diffusive / case.Ntraj]
 			print("\033[96m          trapped particles = {} \033[00m".format(n_trapped))
-			print("\033[96m          diffusive particles ({}) : D = {:.6f}  /  interp = (".format(n_diffusive, slope_d) + ", ".join(["{:.6f}".format(p) for p in popt_d]) + ")\033[00m")
-			print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(rvalue_d**2, R2_d))
-			vec_data = [case.A, case.rho, case.eta, n_trapped / case.Ntraj, n_diffusive / case.Ntraj, slope_d, *popt_d, rvalue_d**2, R2_d]
-			data = xp.array([*data, t, r2_d], dtype=object)
-			info += ' / t / r2_d'
-			if n_ballistic:
-				t, t_win, r2_b, r2_win_b, r2_fit_b, slope_b, popt_b, rvalue_b, R2_b = compute_r2(case, Ballistic)
-				print("\033[96m          ballistic particles ({}) : D = {:.6f}  /  interp = (".format(n_ballistic, slope_b) + ", ".join(["{:.6f}".format(p) for p in popt_b]) + ")\033[00m")
-				print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(rvalue_b**2, R2_b))
-				vec_data.extend([slope_b, *popt_b, rvalue_b**2, R2_b])
-				data = xp.array([*data, r2_b], dtype=object)
-				info += ' / r2_b'
+			for traj in ['Diffusive', 'Ballistic']:
+				if traj.size:
+					print("\033[96m          {} particles ({}) : D = {:.6f}  /  interp = (".format(traj.type, n_diffusive, traj.diff_data[0]) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + ")\033[00m")
+					print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(traj.diff_data[1]**2, traj.interp_data[1]))
+					vec_data.expend([traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
@@ -218,13 +211,10 @@ def run_method(case):
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$t$')
 				ax.set_ylabel('$r^2$')
-				plt.plot(t, r2_d, ':', color=cs[3], lw=1)
-				plt.plot(t_win, r2_win_d, '-', color=cs[3], lw=2)
-				plt.plot(t_win, r2_fit_d, '-.', color=cs[3], lw=2)
-				if n_ballistic:
-					plt.plot(t, r2_b, ':', color=cs[4], lw=1)
-					plt.plot(t_win, r2_win_b, '-', color=cs[4], lw=2)
-					plt.plot(t_win, r2_fit_b, '-.', color=cs[4], lw=2)
+				for traj in ['Diffusive', 'Ballistic']:
+					plt.plot(traj.t[:-1], traj.r2, ':', color=traj.color, lw=1)
+					plt.plot(traj.t_win, traj.r2_win, '-', color=traj.color, lw=2)
+					plt.plot(traj.t_win, traj.r2_fit, '-.', color=traj.color, lw=2)
 				if case.SaveData:
 					fig.savefig(filestr + '.png', dpi=case.dpi)
 					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
@@ -238,20 +228,6 @@ def define_type(case, x, axis=1, output=[0, 1, 2]):
 	vec[delta[0] / delta[1] > case.threshold**2] = output[2]
 	vec[delta[1] / delta[0] > case.threshold**2] = output[2]
 	return vec
-
-def compute_r2(case, traj):
-	func_fit = lambda t, a, b: (a * t)**b
-	x, y = (traj.x, traj.y) if case.Method.endswith('_gc') else (traj.x_gc, traj.y_gc)
-	r2 = xp.zeros(case.Tf)
-	for t in range(case.Tf):
-		r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
-	t = traj.t[:-1]
-	t_win, r2_win = traj.t[case.Tf//8:7*case.Tf//8], r2[case.Tf//8:7*case.Tf//8]
-	popt, pcov = curve_fit(func_fit, t_win, r2_win, bounds=((0, 0.25), (xp.inf, 3)))
-	res = linregress(t_win, r2_win)
-	r2_fit = func_fit(t_win, *popt)
-	R2 = r2_score(r2_win, r2_fit)
-	return t, t_win, r2, r2_win, r2_fit, res.slope, popt, res.rvalue, R2
 
 def save_data(case, data, filestr, info=[]):
 	if case.SaveData:
@@ -286,3 +262,17 @@ class Trajectory:
 			cs = ['w', 'k', 'b', 'm', 'r']
 		self.color = {type in ['trap', 'trapped']: cs[2], type in ['diff', 'untrapped']: cs[3], type == 'ball': cs[4]}.get(True, cs[1])
 		self.type = type
+		self.size = self.x[:, 0].size
+		if case.Method.startswith('diffusion') and type in ['diff', 'ball'] and self.size:
+			x, y = (self.x, self.y) if case.Method.endswith('_gc') else (self.x_gc, self.y_gc)
+			self.r2 = xp.zeros(self.t[-1])
+			for t in range(self.t[-1]):
+				self.r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
+			self.t_win, self.r2_win = self.t[self.t[-1]//8:7*self.t[-1]//8], self.r2[self.t[-1]//8:7*self.t[-1]//8]
+			res = linregress(self.t_win, self.r2_win)
+			self.diff_data = [res.slope, res.rvalue]
+			func_fit = lambda t, a, b: (a * t)**b
+			popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
+			self.r2_fit = func_fit(self.t_win, *popt)
+			R2 = r2_score(self.r2_win, self.r2_fit)
+			self.interp_data = [popt, R2]

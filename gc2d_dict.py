@@ -5,7 +5,7 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare_gc'
+Method = 'diffusion_gc'
 
 FLR = ('all', 'all')
 
