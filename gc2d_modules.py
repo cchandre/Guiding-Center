@@ -244,6 +244,7 @@ class Trajectory:
 		elif type in ['trapped', 'untrapped']:
 			type_ = define_type(case, x, output=['trapped', 'untrapped', 'untrapped'])
 		self.t, self.x, self.y = t, x[0][type_==type, :], x[1][type_==type, :]
+		nt = self.x[0, :].size
 		if case.Method.endswith('_ions'):
 			self.vx, self.vy = x[2][type_==type, :], x[3][type_==type, :]
 			x_gc, y_gc = case.ions2gc(t, *x)
@@ -265,10 +266,10 @@ class Trajectory:
 		self.size = self.x[:, 0].size
 		if case.Method.startswith('diffusion') and type in ['diff', 'ball'] and self.size:
 			x, y = (self.x, self.y) if case.Method.endswith('_gc') else (self.x_gc, self.y_gc)
-			self.r2 = xp.zeros(self.t[-1])
-			for t in range(self.t[-1]):
+			self.r2 = xp.zeros(nt)
+			for t in range(nt):
 				self.r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
-			self.t_win, self.r2_win = self.t[self.t[-1]//8:7*self.t[-1]//8], self.r2[self.t[-1]//8:7*self.t[-1]//8]
+			self.t_win, self.r2_win = self.t[nt//8:7*nt//8], self.r2[nt//8:7*nt//8]
 			res = linregress(self.t_win, self.r2_win)
 			self.diff_data = [res.slope, res.rvalue]
 			func_fit = lambda t, a, b: (a * t)**b
