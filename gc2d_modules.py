@@ -151,7 +151,7 @@ def run_method(case):
 				vec_un += (Untrapped.k,)
 			Diffusive = Trajectory(case, t_eval, vec_un, 'diff')
 			Ballistic = Trajectory(case, t_eval, vec_un, 'ball')
-		data = [Trapped, Diffusive, Ballistic]
+		data = xp.array([Trapped, Diffusive, Ballistic], dtype=object)
 		info = 'Trapped / Diffusive / Ballistic'
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		if case.Method.startswith('poincare') and case.PlotResults:
