@@ -157,40 +157,39 @@ def run_method(case):
 		data = [Trapped, Diffusive, Ballistic]
 		info = 'Trapped / Diffusive / Ballistic'
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
-		plt.pause(0.5)
 		if case.Method.startswith('poincare') and case.PlotResults:
-				fig, ax = plt.subplots(1, 1)
-				ax.set_xlabel('$x$')
-				ax.set_ylabel('$y$')
-				ax.grid(case.grid)
-				if case.modulo:
-					if case.Method == 'poincare_gc':
-						for traj in [Trapped, Diffusive, Ballistic]:
-							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
-					elif case.Method == "poincare_ions":
-						for traj in [Trapped, Diffusive, Ballistic]:
-							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=1, markeredgecolor='none')
-							ax.plot(traj.x_gc % (2 * xp.pi), traj.y_gc % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
-					ax.set_xlim(0, 2 * xp.pi)
-					ax.set_ylim(0, 2 * xp.pi)
-					ax.set_xticks([0, xp.pi, 2 * xp.pi])
-					ax.set_yticks([0, xp.pi, 2 * xp.pi])
-					ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
-					ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
-				elif not case.modulo:
-					if case.Method == 'poincare_gc':
-						for traj in [Trapped, Diffusive, Ballistic]:
-							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=3, markeredgecolor='none')
-					elif case.Method == "poincare_ions":
-						for traj in [Trapped, Diffusive, Ballistic]:
-							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=1, markeredgecolor='none')
-							ax.plot(traj.x_gc, traj.y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
-					ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='g', lw=2))
-					ax.set_aspect('equal')
-				if case.SaveData:
-					fig.savefig(filestr + '.png', dpi=case.dpi)
-					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
-				plt.pause(0.5)
+			fig, ax = plt.subplots(1, 1)
+			ax.set_xlabel('$x$')
+			ax.set_ylabel('$y$')
+			ax.grid(case.grid)
+			if case.modulo:
+				if case.Method == 'poincare_gc':
+					for traj in [Trapped, Diffusive, Ballistic]:
+						ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
+				elif case.Method == "poincare_ions":
+					for traj in [Trapped, Diffusive, Ballistic]:
+						ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=1, markeredgecolor='none')
+						ax.plot(traj.x_gc % (2 * xp.pi), traj.y_gc % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
+				ax.set_xlim(0, 2 * xp.pi)
+				ax.set_ylim(0, 2 * xp.pi)
+				ax.set_xticks([0, xp.pi, 2 * xp.pi])
+				ax.set_yticks([0, xp.pi, 2 * xp.pi])
+				ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
+				ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
+			elif not case.modulo:
+				if case.Method == 'poincare_gc':
+					for traj in [Trapped, Diffusive, Ballistic]:
+						ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=3, markeredgecolor='none')
+				elif case.Method == "poincare_ions":
+					for traj in [Trapped, Diffusive, Ballistic]:
+						ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=1, markeredgecolor='none')
+						ax.plot(traj.x_gc, traj.y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
+				ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='g', lw=2))
+				ax.set_aspect('equal')
+			if case.SaveData:
+				fig.savefig(filestr + '.png', dpi=case.dpi)
+				print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
+			plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
 			vec_data = [case.A, case.rho, case.eta, Trapped.size / case.Ntraj]
 			print("\033[96m          trap ({}) \033[00m".format(Trapped.size))
@@ -235,6 +234,9 @@ def save_data(case, data, filestr, info=[]):
 		print("\033[90m        Results saved in {}.mat \033[00m".format(filestr))
 
 class Trajectory:
+	def __str__(self):
+		return "Guiding-center trajectory (gc or ion modes)"
+
 	def __init__(self, case, t, x, type):
 		if type in ['trap', 'diff', 'ball']:
 			type_ = define_type(case, x, output=['trap', 'diff', 'ball'])
