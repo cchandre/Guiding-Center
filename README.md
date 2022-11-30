@@ -38,7 +38,6 @@ ___
 - *TwoStepIntegration*: boolean; if true, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continues integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
 - *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
 - *check_energy*: boolean; if True, the autonomous system is integrated, and the output (`.mat` file) includes the total energy (only if *SaveData*=True)
-- *check_mu*: boolean; if True, the magnetic moment &mu; is computed, and its values included in the output (`.mat`) file if *SaveData*=True
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
 - *modulo*: boolean; if True, *x* and *y* are represented modulo 2&pi; (only for Method='poincare' and PlotResults=True)
 - *N*: integer; number of points on each axis for 'turbulent' (default = 2<sup>10</sup>)
