@@ -139,18 +139,15 @@ def run_method(case):
 				y0 = xp.concatenate((y0, Untrapped.k[:, -1]), axis=None)
 			sol = solve_ivp(case.eqn, (t_eval[case.Tmid], t_eval.max()), y0, t_eval=t_eval[case.Tmid:], max_step=case.TimeStep, atol=1, rtol=1)
 			sol_ = xp.split(sol.y, case.dim)
-			x, y = sol_[:2]
-			Untrapped.x = xp.concatenate((Untrapped.x, x[:, 1:]), axis=1)
-			Untrapped.y = xp.concatenate((Untrapped.y, y[:, 1:]), axis=1)
+			Untrapped.x = xp.concatenate((Untrapped.x, sol_[0][:, 1:]), axis=1)
+			Untrapped.y = xp.concatenate((Untrapped.y, sol_[1][:, 1:]), axis=1)
 			vec_un = (Untrapped.x, Untrapped.y)
 			if case.Method.endswith('_ions'):
-				vx, vy = sol_[2:4]
-				Untrapped.vx = xp.concatenate((Untrapped.vx, vx[:, 1:]), axis=1)
-				Untrapped.vy = xp.concatenate((Untrapped.vy, vy[:, 1:]), axis=1)
+				Untrapped.vx = xp.concatenate((Untrapped.vx, sol_[2][:, 1:]), axis=1)
+				Untrapped.vy = xp.concatenate((Untrapped.vy, sol_[3][:, 1:]), axis=1)
 				vec_un += (Untrapped.vx, Untrapped.vy)
 			if case.check_energy:
-				k = sol_[-1]
-				Untrapped.k = xp.concatenate((Untrapped.k, k[:, 1:]), axis=1)
+				Untrapped.k = xp.concatenate((Untrapped.k, sol_[-1][:, 1:]), axis=1)
 				vec_un += (Untrapped.k,)
 			Diffusive = Trajectory(case, t_eval, vec_un, 'diff')
 			Ballistic = Trajectory(case, t_eval, vec_un, 'ball')
@@ -162,32 +159,26 @@ def run_method(case):
 			ax.set_xlabel('$x$')
 			ax.set_ylabel('$y$')
 			ax.grid(case.grid)
+			if case.Method == 'poincare_gc':
+				for traj in [Trapped, Diffusive, Ballistic]:
+					if traj.size:
+						xp, yp = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
+						ax.plot(xp, yp, '.', color=traj.color, markersize=3, markeredgecolor='none')
+			elif case.Method == "poincare_ions":
+				for traj in [Trapped, Diffusive, Ballistic]:
+					if traj.size:
+						xp, yp = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
+						xp_gc, yp_gc = (traj.x_gc  % (2 * xp.pi), traj.y_gc  % (2 * xp.pi)) if case.modulo else (traj.x_gc, traj.y_gc)
+						ax.plot(xp, yp, '.', color=traj.color, markersize=1, markeredgecolor='none')
+						ax.plot(xp_gc, yp_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
 			if case.modulo:
-				if case.Method == 'poincare_gc':
-					for traj in [Trapped, Diffusive, Ballistic]:
-						if traj.size:
-							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
-				elif case.Method == "poincare_ions":
-					for traj in [Trapped, Diffusive, Ballistic]:
-						if traj.size:
-							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=1, markeredgecolor='none')
-							ax.plot(traj.x_gc % (2 * xp.pi), traj.y_gc % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
 				ax.set_xlim(0, 2 * xp.pi)
 				ax.set_ylim(0, 2 * xp.pi)
 				ax.set_xticks([0, xp.pi, 2 * xp.pi])
 				ax.set_yticks([0, xp.pi, 2 * xp.pi])
 				ax.set_xticklabels(['0', r'$\pi$', r'$2\pi$'])
 				ax.set_yticklabels(['0', r'$\pi$', r'$2\pi$'])
-			elif not case.modulo:
-				if case.Method == 'poincare_gc':
-					for traj in [Trapped, Diffusive, Ballistic]:
-						if traj.size:
-							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=3, markeredgecolor='none')
-				elif case.Method == "poincare_ions":
-					for traj in [Trapped, Diffusive, Ballistic]:
-						if traj.size:
-							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=1, markeredgecolor='none')
-							ax.plot(traj.x_gc, traj.y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
+			else:
 				ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='g', lw=2))
 				ax.set_aspect('equal')
 			if case.SaveData:
