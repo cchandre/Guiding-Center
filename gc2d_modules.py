@@ -165,11 +165,13 @@ def run_method(case):
 			if case.modulo:
 				if case.Method == 'poincare_gc':
 					for traj in [Trapped, Diffusive, Ballistic]:
-						ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
+						if traj.size:
+							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
 				elif case.Method == "poincare_ions":
 					for traj in [Trapped, Diffusive, Ballistic]:
-						ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=1, markeredgecolor='none')
-						ax.plot(traj.x_gc % (2 * xp.pi), traj.y_gc % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
+						if traj.size:
+							ax.plot(traj.x % (2 * xp.pi), traj.y % (2 * xp.pi), '.', color=traj.color, markersize=1, markeredgecolor='none')
+							ax.plot(traj.x_gc % (2 * xp.pi), traj.y_gc % (2 * xp.pi), '.', color=traj.color, markersize=3, markeredgecolor='none')
 				ax.set_xlim(0, 2 * xp.pi)
 				ax.set_ylim(0, 2 * xp.pi)
 				ax.set_xticks([0, xp.pi, 2 * xp.pi])
@@ -179,11 +181,13 @@ def run_method(case):
 			elif not case.modulo:
 				if case.Method == 'poincare_gc':
 					for traj in [Trapped, Diffusive, Ballistic]:
-						ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=3, markeredgecolor='none')
+						if traj.size:
+							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=3, markeredgecolor='none')
 				elif case.Method == "poincare_ions":
 					for traj in [Trapped, Diffusive, Ballistic]:
-						ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=1, markeredgecolor='none')
-						ax.plot(traj.x_gc, traj.y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
+						if traj.size:
+							ax.plot(traj.x, traj.y, '.', color=traj.color, markersize=1, markeredgecolor='none')
+							ax.plot(traj.x_gc, traj.y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
 				ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='g', lw=2))
 				ax.set_aspect('equal')
 			if case.SaveData:
@@ -208,9 +212,10 @@ def run_method(case):
 				ax.set_xlabel('$t$')
 				ax.set_ylabel('$r^2$')
 				for traj in [Diffusive, Ballistic]:
-					plt.plot(traj.t[:-1], traj.r2, ':', color=traj.color, lw=1)
-					plt.plot(traj.t_win, traj.r2_win, '-', color=traj.color, lw=2)
-					plt.plot(traj.t_win, traj.r2_fit, '-.', color=traj.color, lw=2)
+					if traj.size:
+						plt.plot(traj.t, traj.r2, ':', color=traj.color, lw=1)
+						plt.plot(traj.t_win, traj.r2_win, '-', color=traj.color, lw=2)
+						plt.plot(traj.t_win, traj.r2_fit, '-.', color=traj.color, lw=2)
 				if case.SaveData:
 					fig.savefig(filestr + '.png', dpi=case.dpi)
 					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
