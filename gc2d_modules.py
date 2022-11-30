@@ -151,7 +151,7 @@ def run_method(case):
 				vec_un += (Untrapped.k,)
 			Diffusive = Trajectory(case, t_eval, vec_un, 'diff')
 			Ballistic = Trajectory(case, t_eval, vec_un, 'ball')
-		data = xp.array([Trapped, Diffusive, Ballistic], dtype=object)
+		data = [Trapped, Diffusive, Ballistic]
 		info = 'Trapped / Diffusive / Ballistic'
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		if case.Method.startswith('poincare') and case.PlotResults:
@@ -269,6 +269,6 @@ class Trajectory:
 				popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
 				self.r2_fit = func_fit(self.t_win, *popt)
 				R2 = r2_score(self.r2_win, self.r2_fit)
-				self.interp_data = [popt, R2]
+				self.interp_data = xp.array([popt, R2], dtype=object)
 		else:
 			self.size = 0
