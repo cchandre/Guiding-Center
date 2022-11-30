@@ -5,12 +5,12 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare_ions'
+Method = 'diffusion_gc'
 
 FLR = ('all', 'all')
 
 A = 0.7
-rho = 0.25
+rho = 0.2
 eta = 0.05
 
 Ntraj = 100
@@ -19,17 +19,20 @@ threshold = 4
 TwoStepIntegration = True
 Tmid = 100
 TimeStep = 5e-2  # recommended values (gc: 5e-3, ions: 5e-4)
-check_energy = True
+check_energy = False
 init = 'fixed'
-modulo = False
-grid = False
 
 SaveData = True
 PlotResults = True
 Parallelization = (False, 4)
 
+modulo = False
+grid = False
 dpi = 800
 darkmode = True
+
+M = 25 if Potential == 'turbulent' else 5
+N = 2**12
 
 ###################################################################################################
 ##                              DO NOT EDIT BELOW                                                ##
@@ -42,8 +45,6 @@ if xp.all((eta == 0)):
 	GCorder = 1
 else:
 	GCorder = 2
-if Method.endswith('_gc'):
-	check_mu = False
 val_params = xp.meshgrid(A, rho, eta, indexing='ij')
 num_dict = len(val_params[0].flatten())
 dict_list = [{'Potential': Potential} for _ in range(num_dict)]
@@ -70,9 +71,7 @@ for _, dict in enumerate(dict_list):
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,
 		'dpi': dpi,
-		'darkmode': darkmode})
-	if Potential == 'KMdCN':
-		dict.update({'M': 5})
-	elif Potential == 'turbulent':
-		dict.update({'M': 25, 'N': 2**12})
+		'darkmode': darkmode,
+		'M': M,
+		'N': N})
 ###################################################################################################
