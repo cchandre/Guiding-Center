@@ -244,11 +244,11 @@ class Trajectory:
 			if case.Method.endswith('_ions'):
 				self.vx, self.vy = sol_[2], sol_[3]
 				self.x_gc, self.y_gc = case.ions2gc(t, *sol_)
+				self.mu = case.compute_mu(t, *sol_)
 			if case.check_energy:
 				self.k = sol_[-1]
 				h = case.compute_energy(t, *sol_)
 				self.h = ((h.T - h[:, 0]) / h[:, 0]).T
-			self.mu = case.compute_mu(t, *sol_)
 			if case.darkmode:
 				cs = ['k', 'w', 'c', 'm', 'r']
 			else:
