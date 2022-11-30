@@ -106,6 +106,7 @@ def run_method(case):
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
 	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
+		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
 		elif case.init == 'fixed':
@@ -118,7 +119,6 @@ def run_method(case):
 			y0 = xp.concatenate((y0, xp.cos(phi_perp), xp.sin(phi_perp)), axis=None)
 		if case.check_energy:
 			y0 = xp.concatenate((y0, xp.zeros(case.Ntraj)), axis=None)
-		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		start = time.time()
 		if not case.TwoStepIntegration:
 			sol = solve_ivp(case.eqn, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
@@ -247,8 +247,7 @@ class Trajectory:
 			if case.check_energy:
 				h = case.compute_energy(t, *x_)
 				self.h = ((h.T - h[:, 0]) / h[:, 0]).T
-			if case.check_mu:
-				self.mu = case.compute_mu(t, *x_)
+			self.mu = case.compute_mu(t, *x_)
 			if case.darkmode:
 				cs = ['k', 'w', 'c', 'm', 'r']
 			else:
