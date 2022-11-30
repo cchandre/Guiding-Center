@@ -34,7 +34,7 @@ ___
 ####
 - *Ntraj*: integer; number of trajectories to be integrated
 - *Tf*: integer; number of periods for the integration of the trajectories
-- *threshold*: float; value used to discriminate between trapped and untrapped trajectories
+- *threshold*: float; value used to discriminate between trapped and untrapped trajectories (recommended: 4)
 - *TwoStepIntegration*: boolean; if True, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continues integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
 - *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
 - *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for '_gc' and 5x10<sup>-4</sup> for '_ions')
