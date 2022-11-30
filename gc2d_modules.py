@@ -162,15 +162,15 @@ def run_method(case):
 			if case.Method == 'poincare_gc':
 				for traj in [Trapped, Diffusive, Ballistic]:
 					if traj.size:
-						xp, yp = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
-						ax.plot(xp, yp, '.', color=traj.color, markersize=3, markeredgecolor='none')
+						x, y = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
+						ax.plot(x, y, '.', color=traj.color, markersize=3, markeredgecolor='none')
 			elif case.Method == "poincare_ions":
 				for traj in [Trapped, Diffusive, Ballistic]:
 					if traj.size:
-						xp, yp = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
-						xp_gc, yp_gc = (traj.x_gc  % (2 * xp.pi), traj.y_gc  % (2 * xp.pi)) if case.modulo else (traj.x_gc, traj.y_gc)
-						ax.plot(xp, yp, '.', color=traj.color, markersize=1, markeredgecolor='none')
-						ax.plot(xp_gc, yp_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
+						x, y = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
+						x_gc, y_gc = (traj.x_gc  % (2 * xp.pi), traj.y_gc  % (2 * xp.pi)) if case.modulo else (traj.x_gc, traj.y_gc)
+						ax.plot(x, y, '.', color=traj.color, markersize=1, markeredgecolor='none')
+						ax.plot(x_gc, y_gc, '.', color=traj.color, markersize=3, markeredgecolor='none')
 			if case.modulo:
 				ax.set_xlim(0, 2 * xp.pi)
 				ax.set_ylim(0, 2 * xp.pi)
