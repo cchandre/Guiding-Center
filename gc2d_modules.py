@@ -157,6 +157,7 @@ def run_method(case):
 		data = [Trapped, Diffusive, Ballistic]
 		info = 'Trapped / Diffusive / Ballistic'
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
+		plt.pause(0.5)
 		if case.Method.startswith('poincare') and case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
 				ax.set_xlabel('$x$')
@@ -273,4 +274,4 @@ class Trajectory:
 				R2 = r2_score(self.r2_win, self.r2_fit)
 				self.interp_data = [popt, R2]
 		else:
-			traj.size = 0
+			self.size = 0
