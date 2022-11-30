@@ -219,10 +219,10 @@ def run_method(case):
 
 def define_type(case, x, axis=1, output=[0, 1, 2]):
 	vec = xp.repeat(output[1], x[0][:, 0].size)
-	delta = [xel.ptp(axis=axis) for xel in x[:2]]
-	vec[xp.sqrt(xp.sum(delta**2, axis=0)) <= case.threshold] = output[0]
-	vec[delta[0] / delta[1] > case.threshold] = output[2]
-	vec[delta[1] / delta[0] > case.threshold] = output[2]
+	delta = [xel.ptp(axis=axis)**2 for xel in x[:2]]
+	vec[xp.sqrt(xp.sum(delta, axis=0)) <= case.threshold] = output[0]
+	vec[delta[0] / delta[1] > case.threshold**2] = output[2]
+	vec[delta[1] / delta[0] > case.threshold**2] = output[2]
 	return vec
 
 def save_data(case, data, filestr, info=[]):
