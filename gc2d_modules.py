@@ -213,9 +213,9 @@ def run_method(case):
 				plt.pause(0.5)
 		save_data(case, data, filestr, info=info)
 
-def define_type(case, x, axis=1, output=[0, 1, 2]):
-	vec = xp.repeat(output[1], x[0][:, 0].size)
-	delta = [xel.ptp(axis=axis)**2 for xel in x[:2]]
+def define_type(case, sol, axis=1, output=[0, 1, 2]):
+	vec = xp.repeat(output[1], sol[0][:, 0].size)
+	delta = [el.ptp(axis=axis)**2 for el in sol[:2]]
 	vec[xp.sqrt(xp.sum(delta, axis=0)) <= case.threshold] = output[0]
 	vec[delta[0] / delta[1] > case.threshold**2] = output[2]
 	vec[delta[1] / delta[0] > case.threshold**2] = output[2]
@@ -233,21 +233,22 @@ class Trajectory:
 	def __str__(self):
 		return "Guiding-center trajectory (gc or ion modes)"
 
-	def __init__(self, case, t, x, type):
+	def __init__(self, case, t, sol, type):
 		if type in ['trap', 'diff', 'ball']:
-			type_ = define_type(case, x, output=['trap', 'diff', 'ball'])
+			type_ = define_type(case, sol, output=['trap', 'diff', 'ball'])
 		elif type in ['trapped', 'untrapped']:
-			type_ = define_type(case, x, output=['trapped', 'untrapped', 'untrapped'])
-		x_ = [x[it][type_==type, :] for it in range(case.dim)]
-		self.t, self.x, self.y = t, x_[0], x_[1]
+			type_ = define_type(case, sol, output=['trapped', 'untrapped', 'untrapped'])
+		sol_ = [sol[it][type_==type, :] for it in range(case.dim)]
+		self.t, self.x, self.y = t, sol_[0], sol_[1]
 		if self.x.size:
 			if case.Method.endswith('_ions'):
-				self.vx, self.vy = x_[2], x_[3]
-				self.x_gc, self.y_gc = case.ions2gc(t, *x_)
+				self.vx, self.vy = sol_[2], sol_[3]
+				self.x_gc, self.y_gc = case.ions2gc(t, *sol_)
 			if case.check_energy:
-				h = case.compute_energy(t, *x_)
+				self.k = sol_[-1]
+				h = case.compute_energy(t, *sol_)
 				self.h = ((h.T - h[:, 0]) / h[:, 0]).T
-			self.mu = case.compute_mu(t, *x_)
+			self.mu = case.compute_mu(t, *sol_)
 			if case.darkmode:
 				cs = ['k', 'w', 'c', 'm', 'r']
 			else:

@@ -118,8 +118,8 @@ class GC2Dt:
 
 	def eqn(self, t, y):
 		vars = xp.split(y, self.dim)
-		r_ = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
-		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r_), 0, 1)
+		r = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
+		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r), 0, 1)
 		dphidx, dphidy = fields[:2]
 		if self.Method.endswith('_gc'):
 			dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
@@ -151,31 +151,31 @@ class GC2Dt:
 			dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
 			return xp.concatenate((d_, dk), axis=None)
 
-	def compute_energy(self, t, *y):
-		r_ = xp.moveaxis(xp.asarray(y[:2]) % (2 * xp.pi), 0, -1)
-		k = y[-1]
+	def compute_energy(self, t, *sol):
+		r = xp.moveaxis(xp.asarray(sol[:2]) % (2 * xp.pi), 0, -1)
+		k = sol[-1]
 		if self.dim <= 3:
-			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r_)
+			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r)
 			h = k + (phi_1 * xp.exp(-1j * t)).imag
 			if self.GCorder == 1:
 				return h
 			elif self.GCorder == 2:
-				phi_0 = interpn(self.xy_, self.pad(self.phi_gc2_0), r_)
-				phi_2 = interpn(self.xy_, self.pad(self.phi_gc2_2), r_)
+				phi_0 = interpn(self.xy_, self.pad(self.phi_gc2_0), r)
+				phi_2 = interpn(self.xy_, self.pad(self.phi_gc2_2), r)
 				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
 				return h
 			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
 		else:
-			vx, vy = y[2:4]
-			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r_) * xp.exp(-1j * t)).imag / (2 * self.eta)
+			vx, vy = sol[2:4]
+			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r) * xp.exp(-1j * t)).imag / (2 * self.eta)
 			return h
 		raise ValueError("Error of type in compute_energy")
 
-	def ions2gc(self, t, *y, order=1):
-		x_, y_, vx, vy = y[:4]
+	def ions2gc(self, t, *sol, order=1):
+		x, y, vx, vy = sol[:4]
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
-		x_gc, y_gc = x_ - rho * xp.cos(theta), y_ + rho * xp.sin(theta)
+		x_gc, y_gc = x - rho * xp.cos(theta), y + rho * xp.sin(theta)
 		if order <= 1:
 			return x_gc, y_gc
 		grid, s1 = -self.antiderivative(self.phi, rho)
@@ -187,14 +187,14 @@ class GC2Dt:
 			return x_gc, y_gc
 		raise ValueError("ions2gc not available at order {}".format(order))
 
-	def compute_mu(self, t, *y, order=1):
-		x_, y_, vx, vy = y[:4]
-		r_ = xp.moveaxis(xp.asarray((x_, y_)) % (2 * xp.pi), 0, -1)
+	def compute_mu(self, t, *sol, order=1):
+		x, y, vx, vy = sol[:4]
+		r = xp.moveaxis(xp.asarray((x, y)) % (2 * xp.pi), 0, -1)
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
-		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *y, order=1)) % (2 * xp.pi), 0, -1)
-		phi_c = interpn(self.xy_, self.pad(self.phi), r_)
+		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *sol, order=1)) % (2 * xp.pi), 0, -1)
+		phi_c = interpn(self.xy_, self.pad(self.phi), r)
 		mu += 2 * self.eta * ((phi_c - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
 			return mu

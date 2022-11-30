@@ -5,12 +5,12 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'diffusion_gc'
+Method = 'poincare_ions'
 
 FLR = ('all', 'all')
 
 A = 0.7
-rho = 0.2
+rho = 0.25
 eta = 0.05
 
 Ntraj = 100
@@ -19,13 +19,12 @@ threshold = 4
 TwoStepIntegration = True
 Tmid = 100
 TimeStep = 5e-2  # recommended values (gc: 5e-3, ions: 5e-4)
-check_energy = False
-check_mu = False
+check_energy = True
 init = 'fixed'
 modulo = False
 grid = False
 
-SaveData = False
+SaveData = True
 PlotResults = True
 Parallelization = (False, 4)
 
@@ -68,7 +67,6 @@ for _, dict in enumerate(dict_list):
 		'init': init,
 		'TimeStep': TimeStep,
 		'check_energy': check_energy,
-		'check_mu': check_mu,
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,
 		'dpi': dpi,
@@ -76,5 +74,5 @@ for _, dict in enumerate(dict_list):
 	if Potential == 'KMdCN':
 		dict.update({'M': 5})
 	elif Potential == 'turbulent':
-		dict.update({'M': 25, 'N': 2**10})
+		dict.update({'M': 25, 'N': 2**12})
 ###################################################################################################
