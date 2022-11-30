@@ -192,16 +192,15 @@ def run_method(case):
 				plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
 			vec_data = [case.A, case.rho, case.eta, Trapped.size / case.Ntraj]
-			print("\033[96m          trapped particles = {} \033[00m".format(Trapped.size))
+			print("\033[96m          trap ({}) \033[00m".format(Trapped.size))
 			for traj in [Diffusive, Ballistic]:
 				if traj.size:
-					print("\033[96m          {} particles ({}) : D = {:.6f}  /  interp = (".format(traj.type, traj.size, traj.diff_data[0]) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + ")\033[00m")
-					print("\033[96m                              with  R2 = {:.6f}  /   {:.6f} \033[00m".format(traj.diff_data[1]**2, traj.interp_data[1]))
+					print("\033[96m          {} ({}) : D = ({:.6f} ; {:.6f})  /  interp = (".format(traj.type, traj.size, traj.diff_data[0], traj.diff_data[1]**2) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + " ; {:.6f})\033[00m".format(traj.interp_data[1]))
 					vec_data.extend([traj.size / case.Ntraj, traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
-				file.writelines('%  A        rho      eta    trapped   diffusive  D_d     a_d      b_d   R2_d(diff) R2_d(interp)   ballistic  D_b     a_b     b_b   R2_b(diff)  R2_b(interp)' + '\n')
+				file.writelines('%  A        rho      eta   trapped diffusive  D     a      b   R2(diff) R2(interp)   ballistic  D     a     b   R2(diff)  R2(interp)' + '\n')
 			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 			file.close()
 			if case.PlotResults:
@@ -241,36 +240,37 @@ class Trajectory:
 		elif type in ['trapped', 'untrapped']:
 			type_ = define_type(case, x, output=['trapped', 'untrapped', 'untrapped'])
 		self.t, self.x, self.y = t, x[0][type_==type, :], x[1][type_==type, :]
-		nt = self.x[0, :].size
-		if case.Method.endswith('_ions'):
-			self.vx, self.vy = x[2][type_==type, :], x[3][type_==type, :]
-			x_gc, y_gc = case.ions2gc(t, *x)
-			self.x_gc, self.y_gc = x_gc[type_==type, :], y_gc[type_==type, :]
-		if case.check_energy:
-			self.k = x[-1][type_==type, :]
-			h = case.compute_energy(t, *x)
-			h = ((h.T - h[:, 0]) / h[:, 0]).T
-			self.h = h[type_==type, :]
-		if case.check_mu:
-			mu = case.compute_mu(t, *x)
-			self.mu = mu[type_==type, :]
-		if case.darkmode:
-			cs = ['k', 'w', 'c', 'm', 'r']
-		else:
-			cs = ['w', 'k', 'b', 'm', 'r']
-		self.color = {type in ['trap', 'trapped']: cs[2], type in ['diff', 'untrapped']: cs[3], type == 'ball': cs[4]}.get(True, cs[1])
-		self.type = type
-		self.size = self.x[:, 0].size
-		if case.Method.startswith('diffusion') and type in ['diff', 'ball'] and self.size:
-			x, y = (self.x, self.y) if case.Method.endswith('_gc') else (self.x_gc, self.y_gc)
-			self.r2 = xp.zeros(nt)
-			for t in range(nt):
-				self.r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
-			self.t_win, self.r2_win = self.t[nt//8:7*nt//8], self.r2[nt//8:7*nt//8]
-			res = linregress(self.t_win, self.r2_win)
-			self.diff_data = [res.slope, res.rvalue]
-			func_fit = lambda t, a, b: (a * t)**b
-			popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
-			self.r2_fit = func_fit(self.t_win, *popt)
-			R2 = r2_score(self.r2_win, self.r2_fit)
-			self.interp_data = [popt, R2]
+		if self.x.size:
+			nt = self.x[0, :].size
+			if case.Method.endswith('_ions'):
+				self.vx, self.vy = x[2][type_==type, :], x[3][type_==type, :]
+				x_gc, y_gc = case.ions2gc(t, *x)
+				self.x_gc, self.y_gc = x_gc[type_==type, :], y_gc[type_==type, :]
+			if case.check_energy:
+				self.k = x[-1][type_==type, :]
+				h = case.compute_energy(t, *x)
+				h = ((h.T - h[:, 0]) / h[:, 0]).T
+				self.h = h[type_==type, :]
+			if case.check_mu:
+				mu = case.compute_mu(t, *x)
+				self.mu = mu[type_==type, :]
+			if case.darkmode:
+				cs = ['k', 'w', 'c', 'm', 'r']
+			else:
+				cs = ['w', 'k', 'b', 'm', 'r']
+			self.color = {type in ['trap', 'trapped']: cs[2], type in ['diff', 'untrapped']: cs[3], type == 'ball': cs[4]}.get(True, cs[1])
+			self.type = type
+			self.size = self.x[:, 0].size
+			if case.Method.startswith('diffusion') and type in ['diff', 'ball']:
+				x, y = (self.x, self.y) if case.Method.endswith('_gc') else (self.x_gc, self.y_gc)
+				self.r2 = xp.zeros(nt)
+				for t in range(nt):
+					self.r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
+				self.t_win, self.r2_win = self.t[nt//8:7*nt//8], self.r2[nt//8:7*nt//8]
+				res = linregress(self.t_win, self.r2_win)
+				self.diff_data = [res.slope, res.rvalue]
+				func_fit = lambda t, a, b: (a * t)**b
+				popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
+				self.r2_fit = func_fit(self.t_win, *popt)
+				R2 = r2_score(self.r2_win, self.r2_fit)
+				self.interp_data = [popt, R2]
