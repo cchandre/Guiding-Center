@@ -30,25 +30,27 @@ ___
 - *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
 - *rho*: float or array of floats; value(s) of the Larmor radius; for ions, this value corresponds to the thermal Larmor radius
 - *eta*: float or array of floats; value(s) of the coefficient in front of the GC order 2 potential; &eta;>0 for positive charge, &eta;<0 for negative charge [theory: &eta;=1/(2&Omega;)] 
-- *M*: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent') 
 ####
 - *Ntraj*: integer; number of trajectories to be integrated
 - *Tf*: integer; number of periods for the integration of the trajectories
 - *threshold*: float; value used to discriminate between trapped and untrapped trajectories
 - *TwoStepIntegration*: boolean; if True, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continues integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
 - *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
+- *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for '_gc' and 5x10<sup>-4</sup> for '_ions')
 - *check_energy*: boolean; if True, the autonomous system is integrated, and the output (`.mat` file) includes the total energy (only if *SaveData*=True)
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
-- *modulo*: boolean; if True, *x* and *y* are represented modulo 2&pi; (only for Method='poincare' and PlotResults=True)
-- *N*: integer; number of points on each axis for 'turbulent' (recommended: 2<sup>12</sup>)
-- *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for '_gc' and 5x10<sup>-4</sup> for '_ions')
 ####
 - *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré sections and diffusion plots *r*<sup>2</sup>(*t*) are saved as `.png` files; NB: the diffusion data are saved in a `.txt` file regardless of the value of *SaveData*
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
+####
+- *modulo*: boolean; if True, *x* and *y* are represented modulo 2&pi; (only for Method='poincare' and PlotResults=True)
+- *grid*: boolean; if True, show the grid lines on plots
 - *dpi*: integer; dpi value for the figures
-
 - *darkmode*: boolean; if True, plots are done in dark mode
+####
+- *M*: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent') 
+- *N*: integer; number of points on each axis for 'turbulent' (recommended: 2<sup>12</sup>)
 
 ---
 For more information: <cristel.chandre@cnrs.fr>
