@@ -200,7 +200,7 @@ def run_method(case):
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
-				file.writelines('%  A        rho      eta   trapped diffusive  D     a      b   R2(diff) R2(interp)   ballistic  D     a     b   R2(diff)  R2(interp)' + '\n')
+				file.writelines('%  A        rho      eta   trapped  diffusive    D        a        b    R2(diff) R2(interp) ballistic  D        a        b    R2(diff) R2(interp)' + '\n')
 			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 			file.close()
 			if case.PlotResults:
@@ -239,21 +239,18 @@ class Trajectory:
 			type_ = define_type(case, x, output=['trap', 'diff', 'ball'])
 		elif type in ['trapped', 'untrapped']:
 			type_ = define_type(case, x, output=['trapped', 'untrapped', 'untrapped'])
-		self.t, self.x, self.y = t, x[0][type_==type, :], x[1][type_==type, :]
+		x_ = [x[it][type_==type, :] for it in range(case.dim)]
+		self.t, self.x, self.y = t, x_[0], x_[1]
 		if self.x.size:
-			nt = self.x[0, :].size
 			if case.Method.endswith('_ions'):
-				self.vx, self.vy = x[2][type_==type, :], x[3][type_==type, :]
-				x_gc, y_gc = case.ions2gc(t, *x)
-				self.x_gc, self.y_gc = x_gc[type_==type, :], y_gc[type_==type, :]
+				self.vx, self.vy = x_[2], x_[3]
+				self.x_gc, self.y_gc = case.ions2gc(t, *x_)
 			if case.check_energy:
-				self.k = x[-1][type_==type, :]
-				h = case.compute_energy(t, *x)
-				h = ((h.T - h[:, 0]) / h[:, 0]).T
-				self.h = h[type_==type, :]
+				self.k = x_[-1]
+				h = case.compute_energy(t, *x_)
+				self.h = ((h.T - h[:, 0]) / h[:, 0]).T
 			if case.check_mu:
-				mu = case.compute_mu(t, *x)
-				self.mu = mu[type_==type, :]
+				self.mu = case.compute_mu(t, *x_)
 			if case.darkmode:
 				cs = ['k', 'w', 'c', 'm', 'r']
 			else:
@@ -262,10 +259,11 @@ class Trajectory:
 			self.type = type
 			self.size = self.x[:, 0].size
 			if case.Method.startswith('diffusion') and type in ['diff', 'ball']:
-				x, y = (self.x, self.y) if case.Method.endswith('_gc') else (self.x_gc, self.y_gc)
+				nt = self.x[0, :].size
+				xd, yd = (self.x, self.y) if case.Method.endswith('_gc') else (self.x_gc, self.y_gc)
 				self.r2 = xp.zeros(nt)
-				for t in range(nt):
-					self.r2[t] = ((x[:, t:] - x[:, :-t if t else None])**2 + (y[:, t:] - y[:, :-t if t else None])**2).mean()
+				for _ in range(nt):
+					self.r2[_] = ((xd[:, _:] - xd[:, :-_ if _ else None])**2 + (yd[:, _:] - yd[:, :-_ if _ else None])**2).mean()
 				self.t_win, self.r2_win = self.t[nt//8:7*nt//8], self.r2[nt//8:7*nt//8]
 				res = linregress(self.t_win, self.r2_win)
 				self.diff_data = [res.slope, res.rvalue]
@@ -274,3 +272,5 @@ class Trajectory:
 				self.r2_fit = func_fit(self.t_win, *popt)
 				R2 = r2_score(self.r2_win, self.r2_fit)
 				self.interp_data = [popt, R2]
+		else:
+			traj.size = 0
