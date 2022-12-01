@@ -37,7 +37,7 @@ ___
 - *threshold*: float; value used to discriminate between trapped and untrapped trajectories (recommended: 4)
 - *TwoStepIntegration*: boolean; if True, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continues integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
 - *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
-- *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for '_gc' and 5x10<sup>-4</sup> for '_fo')
+- *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for guiding centers and 5x10<sup>-4</sup> for full orbits)
 - *check_energy*: boolean; if True, the autonomous system is integrated, and the output (`.mat` file) includes the total energy (only if *SaveData*=True)
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
 ####
