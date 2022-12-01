@@ -21,15 +21,15 @@ ___
 - *Potential*: string; 'KMdCN' or 'turbulent' 
 - *Method*: string
   - 'potentials' (only for Potential='turbulent'): plots the electrostatic potential as well as the first and second order guiding-center potentials
-  - 'diffusion_ions': computes the diffusion coefficient for the ions
+  - 'diffusion_fo': computes the diffusion coefficient for the full orbits
   - 'diffusion_gc': computes the diffusion coefficient for the guiding-center trajectories 
-  - 'poincare_ions': plots the trajectories of the ions in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
+  - 'poincare_fo': plots the trajectories of the full orbits in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
   - 'poincare_gc': plots the guiding-center trajectories in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
 ####
 - *FLR*: tuple of 2 strings; 'all', 'pade' or 'none'; if 'all', FLR to all orders is taken into account; if 'pade', a Padé approximant is considered for the FLR effects; if 'none', no FLR effects are taken into account 
 ####
 - *A*: float or array of floats; amplitude(s) of the electrostatic potential [theory: *A*=&epsilon;<sub>&delta;</sub>/*B*]
-- *rho*: float or array of floats; value(s) of the Larmor radius; for ions, this value corresponds to the thermal Larmor radius
+- *rho*: float or array of floats; value(s) of the Larmor radius; for full orbits, this value corresponds to the thermal Larmor radius
 - *eta*: float or array of floats; value(s) of the coefficient in front of the GC order 2 potential; &eta;>0 for positive charge, &eta;<0 for negative charge [theory: &eta;=1/(2&Omega;)] 
 ####
 - *Ntraj*: integer; number of trajectories to be integrated
@@ -37,7 +37,7 @@ ___
 - *threshold*: float; value used to discriminate between trapped and untrapped trajectories (recommended: 4)
 - *TwoStepIntegration*: boolean; if True, computes trajectories from 0 to 2&pi;*T*<sub>mid</sub>, removes the trapped trajectories, and continues integration from 2&pi;*T*<sub>mid</sub> to 2&pi;*T*<sub>f</sub>
 - *Tmid*: integer; number of periods for the integration of trajectories in the first step (if *TwoStepIntegration*=True)
-- *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for '_gc' and 5x10<sup>-4</sup> for '_ions')
+- *TimeStep*: float; time step used by the integrator (recommended: 5x10<sup>-3</sup> for '_gc' and 5x10<sup>-4</sup> for '_fo')
 - *check_energy*: boolean; if True, the autonomous system is integrated, and the output (`.mat` file) includes the total energy (only if *SaveData*=True)
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
 ####
