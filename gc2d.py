@@ -59,8 +59,8 @@ class GC2Dt:
 		return "{self.__class__.__name__}({self.DictParams})".format(self=self)
 
 	def __str__(self):
-		if self.Method.endswith('_ions'):
-			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the ions".format(self=self)
+		if self.Method.endswith('_fo'):
+			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the full orbits".format(self=self)
 		elif self.Method.endswith('_gc') or self.Method == 'potentials':
 			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
 
@@ -88,7 +88,7 @@ class GC2Dt:
 		else:
 			flr1_coeff = 1
 		self.phi_gc1_1 = ifft2(flr1_coeff * fft_phi) * (self.N**2)
-		if self.Method.endswith('_ions'):
+		if self.Method.endswith('_fo'):
 			self.dim = 4
 			stack = self.derivs(self.phi)
 			if self.check_energy:
@@ -138,9 +138,9 @@ class GC2Dt:
 				dk = (phi1 * xp.exp(-1j * t)).real + 2 * (phi2 * xp.exp(-2j * t)).imag
 				return xp.concatenate((dy_gc, dk), axis=None)
 			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
-		elif self.Method.endswith('_ions'):
+		elif self.Method.endswith('_fo'):
 			if self.eta == 0 or self.rho == 0:
-				raise ValueError("Eta or Rho cannot be zero for eqn_ions")
+				raise ValueError("Eta or Rho cannot be zero for full orbits")
 			vx, vy = vars[2:4]
 			dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 			dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
@@ -171,7 +171,7 @@ class GC2Dt:
 			return h
 		raise ValueError("Error of type in compute_energy")
 
-	def ions2gc(self, t, *sol, order=1):
+	def fo2gc(self, t, *sol, order=1):
 		x, y, vx, vy = sol[:4]
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
@@ -185,7 +185,7 @@ class GC2Dt:
 		y_gc += 2 * self.eta * interpn(grid, (ds1dx * xp.exp(-1j * t)).imag, r_gc)
 		if order == 2:
 			return x_gc, y_gc
-		raise ValueError("ions2gc not available at order {}".format(order))
+		raise ValueError("fo2gc not available at order {}".format(order))
 
 	def compute_mu(self, t, *sol, order=1):
 		x, y, vx, vy = sol[:4]
@@ -193,7 +193,7 @@ class GC2Dt:
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
 		if order == 0:
 			return mu
-		r_gc = xp.moveaxis(xp.asarray(self.ions2gc(t, *sol, order=1)) % (2 * xp.pi), 0, -1)
+		r_gc = xp.moveaxis(xp.asarray(self.fo2gc(t, *sol, order=1)) % (2 * xp.pi), 0, -1)
 		phi_c = interpn(self.xy_, self.pad(self.phi), r)
 		mu += 2 * self.eta * ((phi_c - interpn(self.xy_, self.pad(self.phi_gc1_1), r_gc)) * xp.exp(-1j * t)).imag
 		if order == 1:
@@ -260,9 +260,9 @@ class GC2Dk:
 			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, -v20[0] - v2p2 - v2m2), axis=None)
 			return dy_gc1 + dy_gc2
 
-	def eqn_ions(self, t, y):
+	def eqn_fo(self, t, y):
 		if self.eta == 0 or self.rho == 0:
-			raise ValueError("Eta or Rho cannot be zero for eqn_ions")
+			raise ValueError("Eta or Rho cannot be zero for full orbits")
 		x_, y_, vx, vy = xp.split(y, 4)
 		alpha, beta = self.compute_coeffs(t)
 		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)

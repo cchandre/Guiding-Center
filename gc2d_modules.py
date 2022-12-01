@@ -105,7 +105,7 @@ def run_method(case):
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
 		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
 		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
-	elif case.Method in ['poincare_gc', 'poincare_ions', 'diffusion_gc', 'diffusion_ions']:
+	elif case.Method in ['poincare_gc', 'poincare_fo', 'diffusion_gc', 'diffusion_fo']:
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		if case.init == 'random':
 			y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
@@ -114,7 +114,7 @@ def run_method(case):
 			y_mat = xp.meshgrid(y_vec, y_vec)
 			y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 			case.Ntraj = int(xp.sqrt(case.Ntraj))**2
-		if case.Method.endswith('_ions'):
+		if case.Method.endswith('_fo'):
 			phi_perp = 2 * xp.pi * xp.random.rand(case.Ntraj)
 			y0 = xp.concatenate((y0, xp.cos(phi_perp), xp.sin(phi_perp)), axis=None)
 		if case.check_energy:
@@ -133,7 +133,7 @@ def run_method(case):
 			Untrapped = Trajectory(case, t_eval[:case.Tmid+1], sol_, 'untrapped')
 			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(Untrapped.x[:, 0].size))
 			y0 = xp.concatenate((Untrapped.x[:, -1], Untrapped.y[:, -1]), axis=None)
-			if case.Method.endswith('_ions'):
+			if case.Method.endswith('_fo'):
 				y0 = xp.concatenate((y0, Untrapped.vx[:, -1], Untrapped.vy[:, -1]), axis=None)
 			if case.check_energy:
 				y0 = xp.concatenate((y0, Untrapped.k[:, -1]), axis=None)
@@ -142,7 +142,7 @@ def run_method(case):
 			Untrapped.x = xp.concatenate((Untrapped.x, sol_[0][:, 1:]), axis=1)
 			Untrapped.y = xp.concatenate((Untrapped.y, sol_[1][:, 1:]), axis=1)
 			vec_un = (Untrapped.x, Untrapped.y)
-			if case.Method.endswith('_ions'):
+			if case.Method.endswith('_fo'):
 				Untrapped.vx = xp.concatenate((Untrapped.vx, sol_[2][:, 1:]), axis=1)
 				Untrapped.vy = xp.concatenate((Untrapped.vy, sol_[3][:, 1:]), axis=1)
 				vec_un += (Untrapped.vx, Untrapped.vy)
@@ -164,7 +164,7 @@ def run_method(case):
 					if traj.size:
 						x, y = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
 						ax.plot(x, y, '.', color=traj.color, markersize=3, markeredgecolor='none')
-			elif case.Method == "poincare_ions":
+			elif case.Method == "poincare_fo":
 				for traj in [Trapped, Diffusive, Ballistic]:
 					if traj.size:
 						x, y = (traj.x  % (2 * xp.pi), traj.y  % (2 * xp.pi)) if case.modulo else (traj.x, traj.y)
@@ -182,8 +182,8 @@ def run_method(case):
 				ax.add_patch(Rectangle((0, 0), 2 * xp.pi, 2 * xp.pi, facecolor='None', edgecolor='g', lw=2))
 				ax.set_aspect('equal')
 			if case.SaveData:
-				fig.savefig(filestr + '.png', dpi=case.dpi)
-				print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
+				fig.savefig(filestr + case.extension, dpi=case.dpi)
+				print("\033[90m        Figure saved in {}{} \033[00m".format(filestr, case.extension))
 			plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
 			vec_data = [case.A, case.rho, case.eta, Trapped.size / case.Ntraj]
@@ -208,8 +208,8 @@ def run_method(case):
 						plt.plot(traj.t_win, traj.r2_win, '-', color=traj.color, lw=2)
 						plt.plot(traj.t_win, traj.r2_fit, '-.', color=traj.color, lw=2)
 				if case.SaveData:
-					fig.savefig(filestr + '.png', dpi=case.dpi)
-					print("\033[90m        Figure saved in {}.png \033[00m".format(filestr))
+					fig.savefig(filestr + case.extension, dpi=case.dpi)
+					print("\033[90m        Figure saved in {}{} \033[00m".format(filestr, case.extension))
 				plt.pause(0.5)
 		save_data(case, data, filestr, info=info)
 
@@ -232,10 +232,10 @@ def save_data(case, data, filestr, info=[]):
 
 class Trajectory:
 	def __str__(self):
-		return "Guiding-center trajectory (gc or ion modes)"
+		return "Guiding-center trajectory (gc or fo modes)"
 
 	def __init__(self, case, t, sol, type):
-		sol_gc = sol if case.Method.endswith('_gc') else case.ions2gc(t, *sol)
+		sol_gc = sol if case.Method.endswith('_gc') else case.fo2gc(t, *sol)
 		if type in ['trap', 'diff', 'ball']:
 			type_ = define_type(case, sol_gc, output=['trap', 'diff', 'ball'])
 		elif type in ['trapped', 'untrapped']:
@@ -243,9 +243,9 @@ class Trajectory:
 		sol_ = [sol[it][type_==type, :] for it in range(case.dim)]
 		self.t, self.x, self.y = t, sol_[0], sol_[1]
 		if self.x.size:
-			if case.Method.endswith('_ions'):
+			if case.Method.endswith('_fo'):
 				self.vx, self.vy = sol_[2], sol_[3]
-				self.x_gc, self.y_gc = case.ions2gc(t, *sol_)
+				self.x_gc, self.y_gc = case.fo2gc(t, *sol_)
 				self.mu = case.compute_mu(t, *sol_)
 			if case.check_energy:
 				self.k = sol_[-1]
