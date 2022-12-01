@@ -22,8 +22,8 @@ ___
 - *Method*: string
   - 'potentials' (only for Potential='turbulent'): plots the electrostatic potential as well as the first and second order guiding-center potentials
   - 'diffusion_fo': computes the diffusion coefficient for the full orbits
-  - 'diffusion_gc': computes the diffusion coefficient for the guiding-center trajectories 
-  - 'poincare_fo': plots the trajectories of the full orbits in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
+  - 'diffusion_gc': computes the diffusion coefficient for the guiding centers 
+  - 'poincare_fo': plots the full orbits in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
   - 'poincare_gc': plots the guiding-center trajectories in the plane (*x*, *y*) for every period of the potential (stroboscopic plot)
 ####
 - *FLR*: tuple of 2 strings; 'all', 'pade' or 'none'; if 'all', FLR to all orders is taken into account; if 'pade', a Padé approximant is considered for the FLR effects; if 'none', no FLR effects are taken into account 
