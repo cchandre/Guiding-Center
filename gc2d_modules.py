@@ -234,10 +234,11 @@ class Trajectory:
 		return "Guiding-center trajectory (gc or ion modes)"
 
 	def __init__(self, case, t, sol, type):
+		sol_gc = sol if case.Method.endswith('_gc') else case.ions2gc(t, *sol)
 		if type in ['trap', 'diff', 'ball']:
-			type_ = define_type(case, sol, output=['trap', 'diff', 'ball'])
+			type_ = define_type(case, sol_gc, output=['trap', 'diff', 'ball'])
 		elif type in ['trapped', 'untrapped']:
-			type_ = define_type(case, sol, output=['trapped', 'untrapped', 'untrapped'])
+			type_ = define_type(case, sol_gc, output=['trapped', 'untrapped', 'untrapped'])
 		sol_ = [sol[it][type_==type, :] for it in range(case.dim)]
 		self.t, self.x, self.y = t, sol_[0], sol_[1]
 		if self.x.size:
