@@ -49,6 +49,7 @@ ___
 - *grid*: boolean; if True, show the grid lines on plots
 - *dpi*: integer; dpi value for the figures
 - *darkmode*: boolean; if True, plots are done in dark mode
+- *fig_extension*: string; e.g., '.png', '.pdf', '.svg'; format of the figures to be saved
 ####
 - *M*: integer; number of modes (default = 5 for 'KMdCN' and 25 for 'turbulent') 
 - *N*: integer; number of points on each axis for 'turbulent' (recommended: 2<sup>12</sup>)
