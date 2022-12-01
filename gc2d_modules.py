@@ -215,10 +215,11 @@ def run_method(case):
 
 def define_type(case, sol, axis=1, output=[0, 1, 2]):
 	vec = xp.repeat(output[1], sol[0][:, 0].size)
-	delta = [el.ptp(axis=axis)**2 for el in sol[:2]]
+	delta = xp.asarray([el.ptp(axis=axis) for el in sol[:2]])
 	vec[xp.sqrt(xp.sum(delta, axis=0)) <= case.threshold] = output[0]
-	vec[delta[0] / delta[1] > case.threshold**2] = output[2]
-	vec[delta[1] / delta[0] > case.threshold**2] = output[2]
+	untrapped = xp.sqrt(xp.sum(delta, axis=0)) > case.threshold
+	vec[(delta[0] / delta[1] > case.threshold) and untrapped] = output[2]
+	vec[(delta[1] / delta[0] > case.threshold) and untrapped] = output[2]
 	return vec
 
 def save_data(case, data, filestr, info=[]):
