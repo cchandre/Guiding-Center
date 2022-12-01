@@ -41,7 +41,7 @@ ___
 - *check_energy*: boolean; if True, the autonomous system is integrated, and the output (`.mat` file) includes the total energy (only if *SaveData*=True)
 - *init*: string; 'random' or 'fixed'; method to generate initial conditions  
 ####
-- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré sections and diffusion plots *r*<sup>2</sup>(*t*) are saved as `.png` files; NB: the diffusion data are saved in a `.txt` file regardless of the value of *SaveData*
+- *SaveData*: boolean; if True, the results are saved in a `.mat` file; Poincaré sections and diffusion plots *r*<sup>2</sup>(*t*) are saved as *fig_extension* files; NB: the diffusion data are saved in a `.txt` file regardless of the value of *SaveData*
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used or int='all' to use all available cores
 ####
