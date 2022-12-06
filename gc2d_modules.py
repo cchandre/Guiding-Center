@@ -38,6 +38,7 @@ from scipy.io import savemat
 import time
 from datetime import date
 import os
+import gc
 
 def run_method(case):
 	if case.darkmode:
@@ -192,6 +193,8 @@ def run_method(case):
 				if traj.size:
 					print("\033[96m          {} ({}) : D = ({:.6f} ; {:.6f})  /  interp = (".format(traj.type, traj.size, traj.diff_data[0], traj.diff_data[1]**2) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + " ; {:.6f})\033[00m".format(traj.interp_data[1]))
 					vec_data.extend([traj.size / case.Ntraj, traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
+				else:
+					vec_data.extend([0, 0, 0, 0, 0, 0])
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t   and   r^2 = (a t)^b \n')
@@ -212,6 +215,7 @@ def run_method(case):
 					print("\033[90m        Figure saved in {}{} \033[00m".format(filestr, case.extension))
 				plt.pause(0.5)
 		save_data(case, data, filestr, info=info)
+		gc.collect()
 
 def define_type(case, sol, axis=1, output=[0, 1, 2]):
 	vec = xp.repeat(output[1], sol[0][:, 0].size)
