@@ -269,8 +269,13 @@ class Trajectory:
 				for _ in range(nt):
 					self.r2[_] = ((xd[:, _:] - xd[:, :-_ if _ else None])**2 + (yd[:, _:] - yd[:, :-_ if _ else None])**2).mean()
 				self.t_win, self.r2_win = self.t[nt//8:7*nt//8], self.r2[nt//8:7*nt//8]
-				res = linregress(self.t_win, self.r2_win)
-				self.diff_data = [res.slope, res.rvalue]
+				func_fit = lambda t, a, b: a * t + b
+				popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
+				r2_fit = func_fit(self.t_win, *popt)
+				R2 = r2_score(self.r2_win, r2_fit)
+				self.diff_data = [popt[0], R2]
+				#res = linregress(self.t_win, self.r2_win)
+				#self.diff_data = [res.slope, res.rvalue]
 				func_fit = lambda t, a, b: (a * t)**b
 				popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
 				self.r2_fit = func_fit(self.t_win, *popt)
