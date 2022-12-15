@@ -198,7 +198,7 @@ def run_method(case):
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t + int   and   r^2 = (a t)^b \n')
-				file.writelines('%  A        rho      eta   trapped  diffusive    D       int     R2(diff)     a        b    R2(interp) ballistic  D        int    R2(diff)     a        b    R2(interp)' + '\n')
+				file.writelines('%  A        rho      eta   trapped  diffusive    D       int     R2       a        b        R2      ballistic     D       int      R2      a        b      R2' + '\n')
 			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 			file.close()
 			if case.PlotResults:
