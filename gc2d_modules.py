@@ -191,14 +191,14 @@ def run_method(case):
 			print("\033[96m          trap ({}) \033[00m".format(Trapped.size))
 			for traj in [Diffusive, Ballistic]:
 				if traj.size:
-					print("\033[96m          {} ({}) : D = ({:.6f}; {:.6f}; {:.6f})  /  interp = (".format(traj.type, traj.size, traj.diff_data[0], traj.diff_data[1], traj.diff_data[2]**2) + ", ".join(["{:.6f}".format(p) for p in traj.interp_data[0]]) + " ; {:.6f})\033[00m".format(traj.interp_data[1]))
-					vec_data.extend([traj.size / case.Ntraj, traj.diff_data[0], *traj.interp_data[0], traj.diff_data[1]**2, traj.interp_data[1]])
+					print("\033[96m          {} ({}) : D = ({:.6f}; {:.6f}; {:.6f})  /  interp = ({:.6f}; {:.6f}; {:.6f})".format(traj.type, traj.size, *traj.diff_data, *traj.interp_data))
+					vec_data.extend([traj.size / case.Ntraj, *traj.diff_data, *traj.interp_data])
 				else:
 					vec_data.extend([0, 0, 0, 0, 0, 0, 0])
 			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t + int   and   r^2 = (a t)^b \n')
-				file.writelines('%  A        rho      eta   trapped  diffusive    D       int        a        b    R2(diff) R2(interp) ballistic  D        int        a        b    R2(diff) R2(interp)' + '\n')
+				file.writelines('%  A        rho      eta   trapped  diffusive    D       int     R2(diff)     a        b    R2(interp) ballistic  D        int    R2(diff)     a        b    R2(interp)' + '\n')
 			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
 			file.close()
 			if case.PlotResults:
@@ -270,11 +270,11 @@ class Trajectory:
 					self.r2[_] = ((xd[:, _:] - xd[:, :-_ if _ else None])**2 + (yd[:, _:] - yd[:, :-_ if _ else None])**2).mean()
 				self.t_win, self.r2_win = self.t[nt//8:7*nt//8], self.r2[nt//8:7*nt//8]
 				res = linregress(self.t_win, self.r2_win)
-				self.diff_data = [res.slope, res.intercept, res.rvalue]
+				self.diff_data = [res.slope, res.intercept, res.rvalue**2]
 				func_fit = lambda t, a, b: (a * t)**b
 				popt, pcov = curve_fit(func_fit, self.t_win, self.r2_win, bounds=((0, 0.25), (xp.inf, 3)))
 				self.r2_fit = func_fit(self.t_win, *popt)
 				R2 = r2_score(self.r2_win, self.r2_fit)
-				self.interp_data = xp.array([popt, R2], dtype=object)
+				self.interp_data = [*popt, R2]
 		else:
 			self.size = 0
