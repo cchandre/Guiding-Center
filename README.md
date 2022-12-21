@@ -47,7 +47,6 @@ ___
 ####
 - *modulo*: boolean; if True, *x* and *y* are represented modulo 2&pi; (only for Method='poincare' and PlotResults=True)
 - *grid*: boolean; if True, show the grid lines on plots
-- *dpi*: integer; dpi value for the figures
 - *darkmode*: boolean; if True, plots are done in dark mode
 - *fig_extension*: string; e.g., '.png', '.pdf', '.svg'; format of the figures to be saved
 ####
