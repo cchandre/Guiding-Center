@@ -5,35 +5,34 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'poincare_gc'
+Method = 'diffusion_gc'
 
 FLR = ('all', 'all')
 
 A = 0.7
-rho = 0.2
-eta = 0.05
+rho = xp.linspace(0, 0.3, 128)
+eta = xp.linspace(-0.2, 0.3, 128)
 
-Ntraj = 100
-Tf = 500
+Ntraj = 1024
+Tf = 5000
 threshold = 4
 TwoStepIntegration = True
-Tmid = 100
+Tmid = 1500
 TimeStep = 5e-2  # recommended values (gc: 5e-3, fo: 5e-4)
 check_energy = False
 init = 'fixed'
 
 SaveData = False
-PlotResults = True
-Parallelization = (False, 4)
+PlotResults = False
+Parallelization = (True, 100)
 
 modulo = False
-grid = False
-dpi = 800
+grid = False 
 darkmode = True
 fig_extension = '.pdf'
 
 M = 25 if Potential == 'turbulent' else 5
-N = 2**12
+N = 2**10
 
 ###################################################################################################
 ##                              DO NOT EDIT BELOW                                                ##
@@ -71,7 +70,7 @@ for _, dict in enumerate(dict_list):
 		'check_energy': check_energy,
 		'SaveData': SaveData,
 		'PlotResults': PlotResults,
-		'dpi': dpi,
+		'dpi': 200 if Method == 'potentials' else 800,
 		'darkmode': darkmode,
 		'extension': fig_extension,
 		'M': M,
