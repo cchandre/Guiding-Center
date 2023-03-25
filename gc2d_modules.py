@@ -53,11 +53,11 @@ def run_method(case):
 		plt.rc('xtick', color=cs[1], labelcolor=cs[1])
 		plt.rc('ytick', color=cs[1], labelcolor=cs[1])
 		plt.rc('image', cmap='bwr')
-	print("\033[92m    {} \033[00m".format(case.__str__()))
-	print("\033[92m    A = {:.2f}   rho = {:.2f}   eta = {:.2f} \033[00m".format(case.A, case.rho, case.eta))
-	filestr = type(case).__name__ + '_' + 'A{:.2f}_RHO{:.2f}'.format(case.A, case.rho).replace('.', '')
+	print(f'\033[92m    {case.__str__()} \033[00m')
+	print(f'\033[92m    A = {case.A:.2f}   rho = {case.rho:.2f}   eta = {case.eta:.2f} \033[00m')
+	filestr = f'{type(case).__name__}_A{case.A:.2f}_RHO{case.rho:.2f}'.replace('.', '')
 	if case.GCorder == 2:
-		filestr += '_ETA{:.2f}'.format(case.eta).replace('.', '')
+		filestr += f'_ETA{case.eta:.2f}'.replace('.', '')
 	filestr += '_' + case.Method
 	if case.Method == 'potentials' and case.Potential == 'turbulent':
 		start = time.time()
@@ -104,8 +104,8 @@ def run_method(case):
 			fig.colorbar(im[1], ax=axs[0, :].ravel().tolist())
 			fig.colorbar(im[3], ax=axs[1, :].ravel().tolist())
 		ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000).save(filestr + '.gif', writer=PillowWriter(fps=30), dpi=case.dpi)
-		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
-		print("\033[90m        Animation saved in {}.gif \033[00m".format(filestr))
+		print(f'\033[90m        Computation finished in {int(time.time() - start)} seconds \033[00m')
+		print(f'\033[90m        Animation saved in {filestr}.gif \033[00m')
 	elif case.Method in ['poincare_gc', 'poincare_fo', 'diffusion_gc', 'diffusion_fo']:
 		t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 		if case.init == 'random':
@@ -132,7 +132,7 @@ def run_method(case):
 			sol_ = xp.split(sol.y, case.dim)
 			Trapped = Trajectory(case, t_eval[:case.Tmid+1], sol_, 'trapped')
 			Untrapped = Trajectory(case, t_eval[:case.Tmid+1], sol_, 'untrapped')
-			print("\033[90m        Continuing with the integration of {} untrapped particles... \033[00m".format(Untrapped.x[:, 0].size))
+			print(f'\033[90m        Continuing with the integration of {Untrapped.x[:, 0].size} untrapped particles... \033[00m')
 			y0 = xp.concatenate((Untrapped.x[:, -1], Untrapped.y[:, -1]), axis=None)
 			if case.Method.endswith('_fo'):
 				y0 = xp.concatenate((y0, Untrapped.vx[:, -1], Untrapped.vy[:, -1]), axis=None)
@@ -154,7 +154,7 @@ def run_method(case):
 			Ballistic = Trajectory(case, t_eval, vec_un, 'ball')
 		data = [Trapped, Diffusive, Ballistic]
 		info = 'Trapped / Diffusive / Ballistic'
-		print("\033[90m        Computation finished in {} seconds \033[00m".format(int(time.time() - start)))
+		print(f'\033[90m        Computation finished in {int(time.time() - start)} seconds \033[00m')
 		if case.Method.startswith('poincare') and case.PlotResults:
 			fig, ax = plt.subplots(1, 1)
 			ax.set_xlabel('$x$')
@@ -184,22 +184,22 @@ def run_method(case):
 				ax.set_aspect('equal')
 			if case.SaveData:
 				fig.savefig(filestr + case.extension, dpi=case.dpi)
-				print("\033[90m        Figure saved in {}{} \033[00m".format(filestr, case.extension))
+				print(f'\033[90m        Figure saved in {filestr}{case.extension} \033[00m')
 			plt.pause(0.5)
 		if case.Method.startswith('diffusion'):
 			vec_data = [case.A, case.rho, case.eta, Trapped.size / case.Ntraj]
-			print("\033[96m          trap ({}) \033[00m".format(Trapped.size))
+			print(f'\033[96m          trap ({Trapped.size}) \033[00m')
 			for traj in [Diffusive, Ballistic]:
 				if traj.size:
 					print("\033[96m          {} ({}) : D = ({:.6f}; {:.6f}; {:.6f})  /  interp = ({:.6f}; {:.6f}; {:.6f})".format(traj.type, traj.size, *traj.diff_data, *traj.interp_data))
 					vec_data.extend([traj.size / case.Ntraj, *traj.diff_data, *traj.interp_data])
 				else:
 					vec_data.extend([0, 0, 0, 0, 0, 0, 0])
-			file = open(type(case).__name__ + '_' + case.Method + '.txt', 'a')
+			file = open(f'{type(case).__name__}_{case.Method}.txt', 'a')
 			if os.path.getsize(file.name) == 0:
 				file.writelines('%  diffusion laws: r^2 = D t + int   and   r^2 = (a t)^b \n')
 				file.writelines('%  A        rho      eta   trapped  diffusive    D       int     R2       a        b        R2      ballistic     D       int      R2      a        b      R2' + '\n')
-			file.writelines(' '.join(['{:.6f}'.format(data) for data in vec_data]) + '\n')
+			file.writelines(' '.join([f'{data:.6f}' for data in vec_data]) + '\n')
 			file.close()
 			if case.PlotResults:
 				fig, ax = plt.subplots(1, 1)
@@ -212,7 +212,7 @@ def run_method(case):
 						plt.plot(traj.t_win, traj.r2_fit, '-.', color=traj.color, lw=2)
 				if case.SaveData:
 					fig.savefig(filestr + case.extension, dpi=case.dpi)
-					print("\033[90m        Figure saved in {}{} \033[00m".format(filestr, case.extension))
+					print(f'\033[90m        Figure saved in {filestr}{case.extension} \033[00m')
 				plt.pause(0.5)
 		save_data(case, data, filestr, info=info)
 		gc.collect()
@@ -232,7 +232,7 @@ def save_data(case, data, filestr, info=[]):
 		mdic.update({'data': data, 'info': info})
 		mdic.update({'date': date.today().strftime(" %B %d, %Y\n"), 'author': 'cristel.chandre@cnrs.fr'})
 		savemat(filestr + '.mat', mdic)
-		print("\033[90m        Results saved in {}.mat \033[00m".format(filestr))
+		print(f'\033[90m        Results saved in {filestr}.mat \033[00m')
 
 class Trajectory:
 	def __str__(self):

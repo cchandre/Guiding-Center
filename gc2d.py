@@ -60,10 +60,10 @@ class GC2Dt:
 
 	def __str__(self):
 		if self.Method.endswith('_fo'):
-			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the full orbits".format(self=self)
+			return f'2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the full orbits'
 		elif self.Method.endswith('_gc') or self.Method == 'potentials':
-			return "2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
-
+			return f'2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}'
+		
 	def __init__(self, dict):
 		for key in dict:
 			setattr(self, key, dict[key])
@@ -137,10 +137,10 @@ class GC2Dt:
 				phi1, phi2 = fields[6:8]
 				dk = (phi1 * xp.exp(-1j * t)).real + 2 * (phi2 * xp.exp(-2j * t)).imag
 				return xp.concatenate((dy_gc, dk), axis=None)
-			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
+			raise ValueError(f'GCorder={self.GCorder} not currently implemented')
 		elif self.Method.endswith('_fo'):
 			if self.eta == 0 or self.rho == 0:
-				raise ValueError("Eta or Rho cannot be zero for full orbits")
+				raise ValueError('Eta or Rho cannot be zero for full orbits')
 			vx, vy = vars[2:4]
 			dvx = -(dphidx * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) + vy / (2 * self.eta)
 			dvy = -(dphidy * xp.exp(-1j * t)).imag / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
@@ -164,12 +164,11 @@ class GC2Dt:
 				phi_2 = interpn(self.xy_, self.pad(self.phi_gc2_2), r)
 				h += phi_0 - (phi_2 * xp.exp(-2j * t)).real
 				return h
-			raise ValueError("GCorder={} not currently implemented".format(self.GCorder))
+			raise ValueError(f'GCorder={self.GCorder} not currently implemented')
 		else:
 			vx, vy = sol[2:4]
 			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r) * xp.exp(-1j * t)).imag / (2 * self.eta)
 			return h
-		raise ValueError("Error of type in compute_energy")
 
 	def fo2gc(self, t, *sol, order=1):
 		x, y, vx, vy = sol[:4]
@@ -185,7 +184,7 @@ class GC2Dt:
 		y_gc += 2 * self.eta * interpn(grid, (ds1dx * xp.exp(-1j * t)).imag, r_gc)
 		if order == 2:
 			return x_gc, y_gc
-		raise ValueError("fo2gc not available at order {}".format(order))
+		raise ValueError(f'fo2gc not available at order {order}')
 
 	def compute_mu(self, t, *sol, order=1):
 		x, y, vx, vy = sol[:4]
@@ -204,7 +203,7 @@ class GC2Dt:
 		mu += self.eta**2 * (phi_2_2 * xp.exp(-2j * t) - phi_2_0).real
 		if order == 2:
 			return mu
-		raise ValueError("compute_mu not available at order {}".format(order))
+		raise ValueError(f'compute_mu not available at order {order}')
 
 	def antiderivative(self, phi, rho, N=2**8):
 		n = xp.arange(1, N//2 + 1)
@@ -216,10 +215,10 @@ class GC2Dt:
 
 class GC2Dk:
 	def __repr__(self):
-		return "{self.__class__.__name__}({self.DictParams})".format(self=self)
+		return f'{self.__class__.__name__}({self.DictParams})'
 
 	def __str__(self):
-		return "2D Guiding Center ({self.__class__.__name__}) for the KMdCN potential with FLR = {self.FLR} and GC order = {self.GCorder}".format(self=self)
+		return f'2D Guiding Center ({self.__class__.__name__}) for the KMdCN potential with FLR = {self.FLR} and GC order = {self.GCorder}'
 
 	def __init__(self, dict):
 		for key in dict:
@@ -262,7 +261,7 @@ class GC2Dk:
 
 	def eqn_fo(self, t, y):
 		if self.eta == 0 or self.rho == 0:
-			raise ValueError("Eta or Rho cannot be zero for full orbits")
+			raise ValueError('Eta or Rho cannot be zero for full orbits')
 		x_, y_, vx, vy = xp.split(y, 4)
 		alpha, beta = self.compute_coeffs(t)
 		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)
@@ -272,5 +271,5 @@ class GC2Dk:
 		dvy = -self.A * dphidy / self.rho * xp.sign(self.eta) - vx / (2 * self.eta)
 		return xp.concatenate((self.rho / (2 * xp.abs(self.eta)) * vx, self.rho / (2 * xp.abs(self.eta)) * vy, dvx, dvy), axis=None)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 	main()
