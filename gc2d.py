@@ -33,15 +33,16 @@ from scipy.special import jv, eval_chebyu
 from gc2d_modules import run_method
 from gc2d_dict import dict_list, Parallelization
 import multiprocessing
+from typing import Tuple
 
-def run_case(dict):
+def run_case(dict) -> None:
 	if dict['Potential'] == 'KMdCN':
 		case = GC2Dk(dict)
 	elif dict['Potential'] == 'turbulent':
 		case = GC2Dt(dict)
 	run_method(case)
 
-def main():
+def main() -> None:
 	if Parallelization[0]:
 		if Parallelization[1] == 'all':
 			num_cores = multiprocessing.cpu_count()
@@ -55,28 +56,28 @@ def main():
 	plt.show()
 
 class GC2Dt:
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return "{self.__class__.__name__}({self.DictParams})".format(self=self)
 
-	def __str__(self):
+	def __str__(self) -> str:
 		if self.Method.endswith('_fo'):
 			return f'2D Guiding Center ({self.__class__.__name__}) for the turbulent potential for the full orbits'
 		elif self.Method.endswith('_gc') or self.Method == 'potentials':
 			return f'2D Guiding Center ({self.__class__.__name__}) for the turbulent potential with FLR = {self.FLR} and GC order = {self.GCorder}'
 		
-	def __init__(self, dict):
-		for key in dict:
-			setattr(self, key, dict[key])
-		self.DictParams = dict
+	def __init__(self, dict_:dict) -> None:
+		for key in dict_:
+			setattr(self, key, dict_[key])
+		self.DictParams = dict_
 		xp.random.seed(27)
-		phases = 2 * xp.pi * xp.random.random((self.M, self.M))
+		self.phases = 2 * xp.pi * xp.random.random((self.M, self.M))
 		n = xp.meshgrid(xp.arange(1, self.M+1), xp.arange(1, self.M+1), indexing='ij')
 		self.xy_ = 2 * (xp.linspace(0, 2 * xp.pi, self.N+1, dtype=xp.float64),)
 		nm = xp.meshgrid(fftfreq(self.N, d=1/self.N), fftfreq(self.N, d=1/self.N), indexing='ij')
 		sqrt_nm = xp.sqrt(nm[0]**2 + nm[1]**2)
 		self.elts_nm = sqrt_nm, xp.angle(nm[0] + 1j * nm[1])
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
-		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0]**2 + n[1]**2)**1.5).astype(xp.complex128) * xp.exp(1j * phases)
+		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0]**2 + n[1]**2)**1.5).astype(xp.complex128) * xp.exp(1j * self.phases)
 		fft_phi[sqrt_nm > self.M] = 0
 		self.phi = ifft2(fft_phi) * (self.N**2)
 		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
@@ -116,7 +117,27 @@ class GC2Dt:
 					stack += (self.pad(self.phi_gc1_1), self.pad(self.phi_gc2_2))
 		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
 
-	def eqn(self, t, y):
+	def chi(self, h:float, y):
+		for n in range(1, self.M + 1):
+			for m in range(1, self.M + 1):
+				if n**2 + m**2 <= self.M**2:
+					dy = h * self.A / (n**2 + m**2)**1.5 * xp.cos(n * y[1] + m * y[2] + self.phases[n, m] - y[0])
+					y[1] -= m * dy
+					y[2] += n * dy
+		y[0] += h
+		return y
+
+	def chi_star(self, h:float, y):
+		y[0] += h
+		for m in range(self.M + 1, 1, -1):
+			for n in range(self.M + 1, 1, -1):
+				if n**2 + m**2 <= self.M**2:
+					dy = h * self.A / (n**2 + m**2)**1.5 * xp.cos(n * y[1] + m * y[2] + self.phases[n, m] - y[0])
+					y[1] -= m * dy
+					y[2] += n * dy
+		return y
+
+	def eqn(self, t:float, y:xp.ndarray) -> xp.ndarray:
 		vars = xp.split(y, self.dim)
 		r = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r), 0, 1)
@@ -151,7 +172,7 @@ class GC2Dt:
 			dk = (phi * xp.exp(-1j * t)).real / (2 * self.eta)
 			return xp.concatenate((d_, dk), axis=None)
 
-	def compute_energy(self, t, *sol):
+	def compute_energy(self, t:float, *sol) -> xp.ndarray:
 		r = xp.moveaxis(xp.asarray(sol[:2]) % (2 * xp.pi), 0, -1)
 		k = sol[-1]
 		if self.dim <= 3:
@@ -170,7 +191,7 @@ class GC2Dt:
 			h = k + self.rho**2 / (8 * self.eta**2) * (vx**2 + vy**2) + (interpn(self.xy_, self.pad(self.phi), r) * xp.exp(-1j * t)).imag / (2 * self.eta)
 			return h
 
-	def fo2gc(self, t, *sol, order=1):
+	def fo2gc(self, t:float, *sol, order:int=1) -> Tuple[xp.ndarray, xp.ndarray]:
 		x, y, vx, vy = sol[:4]
 		v = vy + 1j * vx
 		theta, rho = xp.pi + xp.angle(v), self.rho * xp.abs(v)
@@ -186,7 +207,7 @@ class GC2Dt:
 			return x_gc, y_gc
 		raise ValueError(f'fo2gc not available at order {order}')
 
-	def compute_mu(self, t, *sol, order=1):
+	def compute_mu(self, t:float, *sol, order:int=1) -> xp.ndarray:
 		x, y, vx, vy = sol[:4]
 		r = xp.moveaxis(xp.asarray((x, y)) % (2 * xp.pi), 0, -1)
 		mu = self.rho**2 * (vx**2 + vy**2) / 2
@@ -205,7 +226,7 @@ class GC2Dt:
 			return mu
 		raise ValueError(f'compute_mu not available at order {order}')
 
-	def antiderivative(self, phi, rho, N=2**8):
+	def antiderivative(self, phi:xp.ndarray, rho:float, N:int=2**8) -> xp.ndarray:
 		n = xp.arange(1, N//2 + 1)
 		jvn = xp.moveaxis(xp.asarray([jv(n_, rho * self.elts_nm[0]) for n_ in n]), 0, -1)
 		ja = 1j**n * jvn / (1j * n) * xp.exp(1j * n * self.elts_nm[1].reshape(self.N, self.N, 1))
@@ -214,16 +235,16 @@ class GC2Dt:
 
 
 class GC2Dk:
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f'{self.__class__.__name__}({self.DictParams})'
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return f'2D Guiding Center ({self.__class__.__name__}) for the KMdCN potential with FLR = {self.FLR} and GC order = {self.GCorder}'
 
-	def __init__(self, dict):
-		for key in dict:
-			setattr(self, key, dict[key])
-		self.DictParams = dict
+	def __init__(self, dict_:dict) -> None:
+		for key in dict_:
+			setattr(self, key, dict_[key])
+		self.DictParams = dict_
 		if self.FLR[0] == 'all':
 			flr1_coeff = jv(0, self.rho * xp.sqrt(2))
 		elif self.FLR[0] == 'pade':
@@ -239,13 +260,13 @@ class GC2Dk:
 		self.A20 = -(self.A**2) * self.eta * flr2_coeff20
 		self.A22 = -(self.A**2) * self.eta * flr2_coeff22
 
-	def compute_coeffs(self, t):
+	def compute_coeffs(self, t:float) -> Tuple[float, float]:
 		cheby_coeff = eval_chebyu(self.M-1, xp.cos(t))
 		alpha = 0.5 + (xp.cos((self.M+1) * t) + xp.cos(self.M * t)) * cheby_coeff
 		beta = 0.5 + (xp.cos((self.M+1) * t) - xp.cos(self.M * t)) * cheby_coeff
 		return alpha, beta
 
-	def eqn_gc(self, t, y):
+	def eqn_gc(self, t, y:xp.ndarray) -> xp.ndarray:
 		x_, y_ = xp.split(y, 2)
 		alpha, beta = self.compute_coeffs(t)
 		smxy, spxy = xp.sin(x_ - y_), xp.sin(x_ + y_)
@@ -259,7 +280,7 @@ class GC2Dk:
 			dy_gc2 = 2 * xp.concatenate((v20[1] + v2p2 - v2m2, -v20[0] - v2p2 - v2m2), axis=None)
 			return dy_gc1 + dy_gc2
 
-	def eqn_fo(self, t, y):
+	def eqn_fo(self, t:float, y:xp.ndarray) -> xp.ndarray:
 		if self.eta == 0 or self.rho == 0:
 			raise ValueError('Eta or Rho cannot be zero for full orbits')
 		x_, y_, vx, vy = xp.split(y, 4)
