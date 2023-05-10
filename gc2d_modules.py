@@ -55,9 +55,9 @@ def run_method(case):
 		plt.rc('image', cmap='bwr')
 	print(f'\033[92m    {case.__str__()} \033[00m')
 	print(f'\033[92m    A = {case.A:.2f}   rho = {case.rho:.2f}   eta = {case.eta:.2f} \033[00m')
-	filestr = f'{type(case).__name__}_A{case.A:.2f}_RHO{case.rho:.2f}'.replace('.', '')
+	filestr = f'{type(case).__name__}_A{case.A:.2f}_RHO{case.rho:.4f}'.replace('.', '')
 	if case.GCorder == 2:
-		filestr += f'_ETA{case.eta:.2f}'.replace('.', '')
+		filestr += f'_ETA{case.eta:.4f}'.replace('.', '')
 	filestr += '_' + case.Method
 	if case.Method == 'potentials' and case.Potential == 'turbulent':
 		start = time.time()
