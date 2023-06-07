@@ -109,10 +109,8 @@ class GC2Dt:
 				else:
 					flr2_coeff = -sqrt_nm**2 / 2
 				self.flr2 = lambda psi: ifft2(fft2(psi) * flr2_coeff)
-				#self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
-				#self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
-				self.phi_gc2_0 = -self.eta * self.flr2(xp.abs(self.phi - self.phi_gc1_1)**2).real / 2
-				self.phi_gc2_2 = -self.eta * self.flr2((self.phi - self.phi_gc1_1)**2) / 2
+				self.phi_gc2_0 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi.conj()) - self.flr2(xp.abs(self.phi)**2)).real / 2
+				self.phi_gc2_2 = self.eta * (2 * self.phi_gc1_1 * self.flr2(self.phi) - self.flr2(self.phi**2)) / 2
 				stack = (*self.derivs(self.phi_gc1_1), *self.derivs(self.phi_gc2_0), *self.derivs(self.phi_gc2_2))
 				if self.check_energy:
 					self.dim += 1
