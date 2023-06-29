@@ -1,5 +1,7 @@
 # Guiding-Center (GC) dynamics in plasma physics
 
+- [`nondimensionalization.mlx`](https://github.com/cchandre/Guiding-Center/blob/main/nondimensionalization.mlx): Matlab Live Script for the computation of the dimensionless parameters *A*, *&rho;* and *&eta;* used in the code and in the analysis
+
 - [`gc2d_dict.py`](https://github.com/cchandre/Guiding-Center/blob/main/gc2d_dict.py): to be edited to change the parameters of the GC computation (see below for a dictionary of parameters)
 
 - [`gc2d.py`](https://github.com/cchandre/Guiding-Center/blob/main/gc2d.py): contains the GC classes and main functions defining the GC dynamics
