@@ -56,6 +56,15 @@ ___
 - *N*: integer; number of points on each axis for 'turbulent' (recommended: 2<sup>12</sup>)
 
 ---
+Reference: 
+- M. Stanzani, F. Arlotti, G. Ciraolo, X. Garbet, C. Chandre, *Transition to super-diffusive transport in turbulent plasmas*, in preparation (2023)
+```bibtex
+@unpublished{stanzani2023,
+  title = {Transition to super-diffusive transport in turbulent plasmas},
+  author = {Stanzani, M. and Arlotti, F. and Ciraolo, G. and Garbet, X. and Chandre, C.},
+  year = {2023},
+}
+```
 For more information: <cristel.chandre@cnrs.fr>
 
 <p align="center">
