@@ -117,26 +117,6 @@ class GC2Dt:
 					stack += (self.pad(self.phi_gc1_1), self.pad(self.phi_gc2_2))
 		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
 
-	def chi(self, h:float, y):
-		for n in range(1, self.M + 1):
-			for m in range(1, self.M + 1):
-				if n**2 + m**2 <= self.M**2:
-					dy = h * self.A / (n**2 + m**2)**1.5 * xp.cos(n * y[1] + m * y[2] + self.phases[n, m] - y[0])
-					y[1] -= m * dy
-					y[2] += n * dy
-		y[0] += h
-		return y
-
-	def chi_star(self, h:float, y):
-		y[0] += h
-		for m in range(self.M + 1, 1, -1):
-			for n in range(self.M + 1, 1, -1):
-				if n**2 + m**2 <= self.M**2:
-					dy = h * self.A / (n**2 + m**2)**1.5 * xp.cos(n * y[1] + m * y[2] + self.phases[n, m] - y[0])
-					y[1] -= m * dy
-					y[2] += n * dy
-		return y
-
 	def eqn(self, t:float, y:xp.ndarray) -> xp.ndarray:
 		vars = xp.split(y, self.dim)
 		r = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
