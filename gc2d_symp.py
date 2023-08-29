@@ -26,10 +26,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as xp
+import matplotlib.pyplot as plt
 from numpy.fft import fft2, ifft2, fftfreq
 from scipy.interpolate import interpn
 from gc2d_modules import run_method
-from gc2d_dict import dict_list, Parallelization
+from gc2d_dict import dict_list
+from pyhamsys import SymplecticIntegrator
+
+def run_case(dict) -> None:
+	case = GC2Dt(dict)
+	run_method(case)
+
+def main() -> None:
+	for dict in dict_list:
+		run_case(dict)
+	plt.show()
 
 class GC2Dt:
 	def __repr__(self) -> str:
@@ -62,6 +73,8 @@ class GC2Dt:
 		if self.check_energy:
 			stack = (*stack, self.pad(self.phi_gc1_1))
 		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
+		if self.solve_method == 'symp':
+			self.integrator = lambda step: SymplecticIntegrator(self.ode_solver, step)
 
 	def chi(self, h:float, y) -> xp.ndarray:
 		fft_coeffs = h * self.fft_phi_sml
@@ -106,3 +119,5 @@ class GC2Dt:
 			nm = xp.meshgrid(fftfreq(self.M, d=1/self.M), fftfreq(self.M, d=1/self.M), indexing='ij')
 			return xp.sum(self.fft_phi_sml * xp.exp(nm[0] * sol[0].reshape(-1, 1, 1) + nm[1] *sol[1].reshape(-1, 1, 1) - t), (1, 2)).imag
 
+if __name__ == '__main__':
+	main()
