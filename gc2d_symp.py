@@ -26,21 +26,15 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as xp
-import matplotlib.pyplot as plt
 from numpy.fft import fft2, ifft2, fftfreq
 from scipy.interpolate import interpn
-from gc2d_modules import run_method
-from gc2d_dict import dict_list
+from gc2d_symp_modules import run_method
+from gc2d_symp_dict import dict_
 from pyhamsys import SymplecticIntegrator
 
-def run_case(dict) -> None:
+def main() -> None:
 	case = GC2Dt(dict)
 	run_method(case)
-
-def main() -> None:
-	for dict in dict_list:
-		run_case(dict)
-	plt.show()
 
 class GC2Dt:
 	def __repr__(self) -> str:
@@ -63,49 +57,59 @@ class GC2Dt:
 		fft_phi = xp.zeros((self.N, self.N), dtype=xp.complex128)
 		fft_phi[1:self.M+1, 1:self.M+1] = (self.A / (n[0]**2 + n[1]**2)** 1.5).astype(xp.complex128) * xp.exp(1j * self.phases)
 		fft_phi[sqrt_nm > self.M] = 0
-		self.fft_phi_sml = fft_phi[:self.M+1, :self.M+1]
 		self.phi = ifft2(fft_phi) * (self.N**2)
 		self.pad = lambda psi: xp.pad(psi, ((0, 1),), mode='wrap')
 		self.derivs = lambda psi: [self.pad(ifft2(1j * nm[_] * fft2(psi))) for _ in range(2)]
 		self.phi_gc1_1 = ifft2(fft_phi) * (self.N**2)
 		self.dim = 2
 		stack = self.derivs(self.phi_gc1_1)
-		if self.check_energy:
-			stack = (*stack, self.pad(self.phi_gc1_1))
+		stack = (*stack, self.pad(self.phi_gc1_1))
 		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
 		if self.solve_method == 'symp':
 			self.integrator = lambda step: SymplecticIntegrator(self.ode_solver, step)
-
-	def chi(self, h:float, y) -> xp.ndarray:
-		fft_coeffs = h * self.fft_phi_sml
-		for n in range(1, self.M + 1):
-			for m in range(1, self.M + 1):
-				dy = (fft_coeffs[n, m] * xp.exp(1j * (n * y[1] + m * y[2] - y[0]))).real 
-				y[1] -= m * dy
-				y[2] += n * dy
-		y[0] += h
-		return y
+			cp = (1 + xp.cos(2 * self.omega * self.TimeStep)) / 2
+			cm = (1 - xp.cos(2 * self.omega * self.TimeStep)) / 2
+			sp = xp.sin(2 * self.omega * self.TimeStep) / 2
+			self.rotation_e = xp.array([[cp, cm, -sp, sp], [cm, cp, sp, -sp], [sp, -sp, cp, cm], [-sp, sp, cp, cp]])
+			self.nm_sml = xp.meshgrid(fftfreq(self.M, d=1/self.M), fftfreq(self.M, d=1/self.M), indexing='ij')
+			self.fft_phi_sml = xp.asarray([-fft_phi[:self.M+1, :self.M+1], self.nm_sml[0] * fft_phi[:self.M+1, :self.M+1], self.nm_sml[1] * fft_phi[:self.M+1, :self.M+1]])
+		
+	def derivs_e(self, x:xp.ndarray, y:xp.ndarray, t:xp.ndarray) -> xp.ndarray:
+		exp_xy = xp.exp(1j * (self.nm_sml[0] * x[xp.newaxis, xp.newaxis] + self.nm_sml[1] * y[xp.newaxis, xp.newaxis] - xp.asarray(t)[xp.newaxis, xp.newaxis]))
+		return xp.sum(self.fft_phi_sml * exp_xy[xp.newaxis], (1, 2)).real
 	
-	def chi_star(self, h:float, y) -> xp.ndarray:
-		fft_coeffs = h * self.fft_phi_sml
-		y[0] += h
-		for m in range(self.M + 1, 1, -1):
-			for n in range(self.M + 1, 1, -1):
-				dy = (fft_coeffs[n, m] * xp.exp(1j * (n * y[1] + m * y[2] - y[0]))).real
-				y[1] -= m * dy
-				y[2] += n * dy
-		return y
+	def chi_e(self, h:float, y) -> xp.ndarray:
+		dphidt, dphidx, dphidy = self.derivs_e(y[1], y[4], y[0])
+		y[2] -= h * dphidy
+		y[3] += h * dphidx
+		y[-1] -= h * dphidt
+		dphidt, dphidx, dphidy = self.derivs_e(y[2], y[3], y[0])
+		y[1] -= h * dphidy
+		y[4] += h * dphidx
+		y[-1] -= h * dphidt
+		y *= self.rotation_e
+		y[0] += h 
+		
+	def chi_e_star(self, h:float, y) -> xp.ndarray:
+		y[0] += h 
+		y *= self.rotation_e
+		dphidt, dphidx, dphidy = self.derivs_e(y[2], y[3], y[0])
+		y[1] -= h * dphidy
+		y[4] += h * dphidx
+		y[-1] -= h * dphidt
+		dphidt, dphidx, dphidy = self.derivs_e(y[1], y[4], y[0])
+		y[2] -= h * dphidy
+		y[3] += h * dphidx
+		y[-1] -= h * dphidt
+		return y 
 
 	def eqn_interp(self, t:float, y:xp.ndarray) -> xp.ndarray:
-		vars = xp.split(y, self.dim)
+		vars = xp.split(y, 3)
 		r = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r), 0, 1)
 		dphidx, dphidy = fields[:2]
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
-		if not self.check_energy:
-			return dy_gc
-		phi = fields[2]
-		dk = (phi * xp.exp(-1j * t)).real
+		dk = (fields[2] * xp.exp(-1j * t)).real
 		return xp.concatenate((dy_gc, dk), axis=None)
 
 	def compute_energy(self, t:float, *sol, method:str='interp') -> xp.ndarray:
@@ -115,9 +119,11 @@ class GC2Dt:
 			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r)
 			h = k + (phi_1 * xp.exp(-1j * t)).imag
 			return h
-		else:
-			nm = xp.meshgrid(fftfreq(self.M, d=1/self.M), fftfreq(self.M, d=1/self.M), indexing='ij')
-			return xp.sum(self.fft_phi_sml * xp.exp(nm[0] * sol[0].reshape(-1, 1, 1) + nm[1] *sol[1].reshape(-1, 1, 1) - t), (1, 2)).imag
+		elif method == 'symp':
+			k = sol[-1]
+			x, y = (sol[1] + sol[2]) / 2, (sol[3] + sol[4]) / 2
+			exp_xy = xp.exp(1j * (self.nm_sml[0] * x[xp.newaxis, xp.newaxis] + self.nm_sml[1] * y[xp.newaxis, xp.newaxis] - t))
+			return k - xp.sum(self.fft_phi_sml[0] * exp_xy[xp.newaxis], (0, 1)).imag
 
 if __name__ == '__main__':
 	main()

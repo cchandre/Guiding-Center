@@ -26,7 +26,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as xp
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from scipy.io import savemat
 import time
