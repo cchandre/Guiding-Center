@@ -67,15 +67,14 @@ class GC2Dt:
 		self.Dphi = xp.moveaxis(xp.stack(stack), 0, -1)
 		if self.solve_method == 'symp':
 			self.integrator = lambda step: SymplecticIntegrator(self.ode_solver, step)
-			cp = (1 + xp.cos(2 * self.omega * self.TimeStep)) / 2
-			cm = (1 - xp.cos(2 * self.omega * self.TimeStep)) / 2
-			sp = xp.sin(2 * self.omega * self.TimeStep) / 2
-			self.rotation_e = xp.array([[cp, cm, -sp, sp], [cm, cp, sp, -sp], [sp, -sp, cp, cm], [-sp, sp, cp, cp]])
 			self.nm_sml = xp.meshgrid(fftfreq(self.M, d=1/self.M), fftfreq(self.M, d=1/self.M), indexing='ij')
 			self.fft_phi_sml = xp.asarray([-fft_phi[:self.M+1, :self.M+1], self.nm_sml[0] * fft_phi[:self.M+1, :self.M+1], self.nm_sml[1] * fft_phi[:self.M+1, :self.M+1]])
+			self.rotation_e = lambda h: (xp.array([[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]])\
+			  + xp.cos(2 * self.omega * h) * xp.array([[1, -1, 0, 0], [-1, 1, 0, 0], [0, 0, 1, -1], [0, 0, -1, 1]])\
+			  + xp.sin(2 * self.omega * h) * xp.array([[0, 0, -1, 1], [0, 0, 1, -1], [1, -1, 0, 0], [-1, 1, 0, 0]])) / 2
 		
 	def derivs_e(self, x:xp.ndarray, y:xp.ndarray, t:xp.ndarray) -> xp.ndarray:
-		exp_xy = xp.exp(1j * (self.nm_sml[0] * x[xp.newaxis, xp.newaxis] + self.nm_sml[1] * y[xp.newaxis, xp.newaxis] - xp.asarray(t)[xp.newaxis, xp.newaxis]))
+		exp_xy = xp.exp(1j * (self.nm_sml[0] * x[xp.newaxis, xp.newaxis] + self.nm_sml[1] * y[xp.newaxis, xp.newaxis] - t[xp.newaxis, xp.newaxis]))
 		return xp.sum(self.fft_phi_sml * exp_xy[xp.newaxis], (1, 2)).real
 	
 	def chi_e(self, h:float, y) -> xp.ndarray:
@@ -87,12 +86,12 @@ class GC2Dt:
 		y[1] -= h * dphidy
 		y[4] += h * dphidx
 		y[-1] -= h * dphidt
-		y *= self.rotation_e
+		y *= self.rotation_e(h)
 		y[0] += h 
 		
-	def chi_e_star(self, h:float, y) -> xp.ndarray:
+	def chi_e_star(self, h:float, y:xp.ndarray) -> xp.ndarray:
 		y[0] += h 
-		y *= self.rotation_e
+		y *= self.rotation_e(h)
 		dphidt, dphidx, dphidy = self.derivs_e(y[2], y[3], y[0])
 		y[1] -= h * dphidy
 		y[4] += h * dphidx
@@ -111,19 +110,21 @@ class GC2Dt:
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
 		dk = (fields[2] * xp.exp(-1j * t)).real
 		return xp.concatenate((dy_gc, dk), axis=None)
+	
+	def integr_e(self, tspan, y:xp.ndarray) -> xp.ndarray:
+		y_ = xp.split(y,4)
+		y_e = xp.concatenate((y_[0][xp.newaxis], y_[1][xp.newaxis], y_[1][xp.newaxis], y_[2][xp.newaxis], y_[2][xp.newaxis], y_[3][xp.newaxis]))
+		sol = self.integrator(self.TimeStep).integrate(self.chi_e, self.chi_e_star, y_e, tspan)
+		y_e = xp.split(sol, axis=0)
+		y_[0], y_[3] = y_e[0], y_e[-1]
+		y_[1] = (y_e[1] + y_e[2]) / 2
+		y_[2] = (y_e[3] + y_e[4]) / 2
+		return y_
 
-	def compute_energy(self, t:float, *sol, method:str='interp') -> xp.ndarray:
-		if method == 'interp':
-			r = xp.moveaxis(xp.asarray(sol[:2]) % (2 * xp.pi), 0, -1)
-			k = sol[-1]
-			phi_1 = interpn(self.xy_, self.pad(self.phi_gc1_1), r)
-			h = k + (phi_1 * xp.exp(-1j * t)).imag
-			return h
-		elif method == 'symp':
-			k = sol[-1]
-			x, y = (sol[1] + sol[2]) / 2, (sol[3] + sol[4]) / 2
-			exp_xy = xp.exp(1j * (self.nm_sml[0] * x[xp.newaxis, xp.newaxis] + self.nm_sml[1] * y[xp.newaxis, xp.newaxis] - t))
-			return k - xp.sum(self.fft_phi_sml[0] * exp_xy[xp.newaxis], (0, 1)).imag
+	def compute_energy(self, *sol) -> xp.ndarray:
+		k = sol[-1]
+		exp_xy = xp.exp(1j * (self.nm_sml[0] * sol[1][xp.newaxis, xp.newaxis] + self.nm_sml[1] * sol[2][xp.newaxis, xp.newaxis] - sol[0]))
+		return k - xp.sum(self.fft_phi_sml[0] * exp_xy[xp.newaxis], (0, 1)).imag
 
 if __name__ == '__main__':
 	main()
