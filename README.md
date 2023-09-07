@@ -57,7 +57,7 @@ ___
 
 ---
 Reference: 
-- M. Stanzani, F. Arlotti, G. Ciraolo, X. Garbet, C. Chandre, *Transition to super-diffusive transport in turbulent plasmas*, preprint (2023)
+- M. Stanzani, F. Arlotti, G. Ciraolo, X. Garbet, C. Chandre, *Transition to super-diffusive transport in turbulent plasmas*, [arXiv:2309.02461](https://arxiv.org/abs/2309.02461)
 ```bibtex
 @unpublished{stanzani2023,
   title = {Transition to super-diffusive transport in turbulent plasmas},
