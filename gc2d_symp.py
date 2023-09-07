@@ -103,8 +103,8 @@ class GC2Dt:
 		return y 
 
 	def eqn_interp(self, t:float, y:xp.ndarray) -> xp.ndarray:
-		vars = xp.split(y, 3)
-		r = xp.moveaxis(xp.asarray(vars[:2]) % (2 * xp.pi), 0, -1)
+		vars = xp.split(y, 4)
+		r = xp.moveaxis(xp.asarray(vars[1:3]) % (2 * xp.pi), 0, -1)
 		fields = xp.moveaxis(interpn(self.xy_, self.Dphi, r), 0, 1)
 		dphidx, dphidy = fields[:2]
 		dy_gc = xp.concatenate((-(dphidy * xp.exp(-1j * t)).imag, (dphidx * xp.exp(-1j * t)).imag), axis=None)
@@ -112,7 +112,7 @@ class GC2Dt:
 		return xp.concatenate((dy_gc, dk), axis=None)
 	
 	def integr_e(self, tspan, y:xp.ndarray) -> xp.ndarray:
-		y_ = xp.split(y,4)
+		y_ = xp.split(y, 4)
 		y_e = xp.concatenate((y_[0][xp.newaxis], y_[1][xp.newaxis], y_[1][xp.newaxis], y_[2][xp.newaxis], y_[2][xp.newaxis], y_[3][xp.newaxis]))
 		sol = self.integrator(self.TimeStep).integrate(self.chi_e, self.chi_e_star, y_e, tspan)
 		y_e = xp.split(sol, axis=0)
