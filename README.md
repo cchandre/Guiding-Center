@@ -63,6 +63,7 @@ Reference:
   title = {Transition to super-diffusive transport in turbulent plasmas},
   author = {Stanzani, M. and Arlotti, F. and Ciraolo, G. and Garbet, X. and Chandre, C.},
   year = {2023},
+  URL = {https://arxiv.org/abs/2309.02461}
 }
 ```
 For more information: <cristel.chandre@cnrs.fr>
