@@ -32,7 +32,7 @@ import time
 from datetime import date
 
 def run_method(case):
-	print(f'\033[92m    {case.__str__()} \033[00m')
+	print(f"\033[92m   Integration of {case.__str__()} using {'symplectic integrator' if case.solve_method=='symp' else 'linear interpolation'} \033[00m")
 	t_eval = 2 * xp.pi * xp.arange(0, case.Tf + 1)
 	if case.init == 'random':
 		y0 = 2 * xp.pi * xp.random.rand(2 * case.Ntraj)
@@ -41,15 +41,15 @@ def run_method(case):
 		y_mat = xp.meshgrid(y_vec, y_vec)
 		y0 = xp.concatenate((y_mat[0], y_mat[1]), axis=None)
 		case.Ntraj = int(xp.sqrt(case.Ntraj))**2
-	y0 = xp.concatenate((y0, xp.zeros(case.Ntraj)), axis=None)
-	energy0 = case.compute_energy(0, *y0, method=case.solve_method)
+	y0 = xp.concatenate((xp.zeros(case.Ntraj), y0, xp.zeros(case.Ntraj)), axis=None)
 	start = time.time()
 	if case.solve_method == 'interp':
-		sol = solve_ivp(case.eqn, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
+		sol = solve_ivp(case.eqn_interp, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1).y
 	elif case.solve_method == 'symp':
-		sol = case.integr_e(t_eval, y0)
+		sol = case.integr_e(t_eval, y0)[1]
 	print(f'\033[90m        Computation finished in {int(time.time() - start)} seconds \033[00m')
-	err_energy = xp.abs(case.compute_energy(t_eval, *sol, method=case.solve_method) - energy0)
+	energy = case.compute_energy(sol)
+	err_energy = xp.abs(energy - energy[:, 0][:, xp.newaxis])
 	print(f'\033[90m           with error in energy = {xp.max(err_energy)}')
 
 def save_data(case, data, filestr, info=[]):

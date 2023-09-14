@@ -4,27 +4,29 @@
 
 A = 0.7
 
-Ntraj = 10
-Tf = 500
-TimeStep = 5e-2  # recommended values (gc: 5e-3, fo: 5e-4)
+Ntraj = 5
+Tf = 50
+TimeStep = 1e-3  # recommended value: 5e-3
 init = 'fixed'
-solve_method = 'interp'
+solve_method = 'symp'
+ode_solver = 'Verlet'
 omega = 10
 
 SaveData = False
 
 M = 25
-N = 2**10
+N = 2**12
 
 ###################################################################################################
 ##                              DO NOT EDIT BELOW                                                ##
 ###################################################################################################
-dict_ = {
+dictparams = {
 	'A': A,
 	'Ntraj': Ntraj,
 	'Tf': Tf,
 	'init': init,
     'solve_method': solve_method,
+    'ode_solver': ode_solver,
     'omega': omega,
 	'TimeStep': TimeStep,
 	'SaveData': SaveData,
