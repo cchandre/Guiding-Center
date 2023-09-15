@@ -94,14 +94,14 @@ class GC2Dt:
 		y_[1] -= h * dphidy
 		y_[4] += h * dphidx
 		y_[-1] -= h * dphidt
-		y_[1:5] = xp.einsum('ij,j...->i...', self.rotation_e(h), y_[1:5])
+		y_[1:5] = xp.einsum('ij,j...->i...', self.rotation_e(h), xp.asarray(y_[1:5]))
 		y_[0] += h 
 		return xp.concatenate([y_[_] for _ in range(6)], axis=None)
 		
 	def chi_e_star(self, h:float, y:xp.ndarray) -> xp.ndarray:
 		y_ = xp.split(y, 6)
-		y_[0] += h 
-		y_[1:5] = xp.einsum('ij,j...->i...', self.rotation_e(h), y_[1:5])
+		y_[1:5] = xp.einsum('ij,j...->i...', self.rotation_e(h), xp.asarray(y_[1:5]))
+		y_[0] += h
 		dphidt, dphidx, dphidy = self.derivs_e(y_[2], y_[3], y_[0])
 		y_[1] -= h * dphidy
 		y_[4] += h * dphidx
@@ -114,13 +114,13 @@ class GC2Dt:
 
 	def integr_e(self, tspan, y:xp.ndarray) -> xp.ndarray:
 		y_ = xp.split(y, 4)
-		y_e = xp.concatenate((y_[0], y_[1], y_[1], y_[2], y_[2], y_[3]))
+		y_e = xp.concatenate((y_[0], y_[1], y_[1], y_[2], y_[2], y_[3]), axis=None)
 		sol = self.integrator(self.TimeStep).integrate(self.chi_e, self.chi_e_star, y_e, tspan)
 		y_e = xp.split(sol[1], 6, axis=0)
-		y_[0], y_[3] = y_e[0], y_e[-1]
+		y_[0], y_[3] = y_e[0], y_e[-1] / 2
 		y_[1] = (y_e[1] + y_e[2]) / 2
 		y_[2] = (y_e[3] + y_e[4]) / 2
-		return y_
+		return xp.concatenate([y_[_] for _ in range(4)], axis=0)
 
 	def compute_energy(self, sol) -> xp.ndarray:
 		y = xp.split(sol, 4)

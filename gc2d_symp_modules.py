@@ -46,16 +46,18 @@ def run_method(case):
 	if case.solve_method == 'interp':
 		sol = solve_ivp(case.eqn_interp, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1).y
 	elif case.solve_method == 'symp':
-		sol = case.integr_e(t_eval, y0)[1]
+		sol = case.integr_e(t_eval, y0)
 	print(f'\033[90m        Computation finished in {int(time.time() - start)} seconds \033[00m')
 	energy = case.compute_energy(sol)
 	err_energy = xp.abs(energy - energy[:, 0][:, xp.newaxis])
 	print(f'\033[90m           with error in energy = {xp.max(err_energy)}')
+	save_data(case, sol, 'sol_' + case.solve_method)
 
 def save_data(case, data, filestr, info=[]):
 	if case.SaveData:
+		x, y = xp.split(data, 4)[1:3]
 		mdic = case.DictParams.copy()
-		mdic.update({'data': data, 'info': info})
+		mdic.update({'x': x, 'y': y, 'info': info})
 		mdic.update({'date': date.today().strftime(" %B %d, %Y\n"), 'author': 'cristel.chandre@cnrs.fr'})
 		savemat(filestr + '.mat', mdic)
 		print(f'\033[90m        Results saved in {filestr}.mat \033[00m')

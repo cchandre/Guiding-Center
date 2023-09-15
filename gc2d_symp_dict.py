@@ -4,9 +4,9 @@
 
 A = 0.7
 
-Ntraj = 5
-Tf = 50
-TimeStep = 1e-3  # recommended value: 5e-3
+Ntraj = 500
+Tf = 500
+TimeStep = 1e-2  # recommended value: 5e-3
 init = 'fixed'
 solve_method = 'symp'
 ode_solver = 'Verlet'
