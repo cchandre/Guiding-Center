@@ -44,14 +44,14 @@ def run_method(case):
 	y0 = xp.concatenate((xp.zeros(case.Ntraj), y0, xp.zeros(case.Ntraj)), axis=None)
 	start = time.time()
 	if case.solve_method == 'interp':
-		sol = solve_ivp(case.eqn_interp, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1).y
+		sol = solve_ivp(case.eqn_interp, (0, t_eval.max()), y0, t_eval=t_eval, max_step=case.TimeStep, atol=1, rtol=1)
 	elif case.solve_method == 'symp':
 		sol = case.integr_e(t_eval, y0)
 	print(f'\033[90m        Computation finished in {int(time.time() - start)} seconds \033[00m')
-	energy = case.compute_energy(sol)
+	energy = case.compute_energy(sol.y)
 	err_energy = xp.abs(energy - energy[:, 0][:, xp.newaxis])
 	print(f'\033[90m           with error in energy = {xp.max(err_energy)}')
-	save_data(case, sol, 'sol_' + case.solve_method)
+	save_data(case, sol.y, 'sol_' + case.solve_method)
 
 def save_data(case, data, filestr, info=[]):
 	if case.SaveData:

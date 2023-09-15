@@ -30,10 +30,12 @@ from numpy.fft import fft2, ifft2, fftfreq
 from scipy.interpolate import interpn
 from gc2d_symp_modules import run_method
 from gc2d_symp_dict import dictparams
-from pyhamsys import SymplecticIntegrator
+from pyhamsys import SymplecticIntegrator, OdeSolution
 
 def main() -> None:
 	run_method(GC2Dt(dictparams))
+
+SCHEMES = ['interp', 'symp']
 
 class GC2Dt:
 	def __repr__(self) -> str:
@@ -45,7 +47,10 @@ class GC2Dt:
 	def __init__(self, dict_: dict) -> None:
 		for key in dict_:
 			setattr(self, key, dict_[key])
+		if self.solve_method not in SCHEMES:
+			raise ValueError(f"The chosen numerical scheme must be one of {SCHEMES}.")
 		self.DictParams = dictparams
+		self.TimeStep = 2 * xp.pi / xp.floor(2 * xp.pi / self.TimeStep)
 		xp.random.seed(27)
 		self.phases = 2 * xp.pi * xp.random.random((self.M, self.M))
 		self.nm = xp.meshgrid(xp.arange(self.M+1), xp.arange(self.M+1), indexing='ij')
@@ -116,11 +121,11 @@ class GC2Dt:
 		y_ = xp.split(y, 4)
 		y_e = xp.concatenate((y_[0], y_[1], y_[1], y_[2], y_[2], y_[3]), axis=None)
 		sol = self.integrator(self.TimeStep).integrate(self.chi_e, self.chi_e_star, y_e, tspan)
-		y_e = xp.split(sol[1], 6, axis=0)
+		y_e = xp.split(sol.y, 6, axis=0)
 		y_[0], y_[3] = y_e[0], y_e[-1] / 2
 		y_[1] = (y_e[1] + y_e[2]) / 2
 		y_[2] = (y_e[3] + y_e[4]) / 2
-		return xp.concatenate([y_[_] for _ in range(4)], axis=0)
+		return OdeSolution(t=tspan, y=xp.concatenate([y_[_] for _ in range(4)], axis=0))
 
 	def compute_energy(self, sol) -> xp.ndarray:
 		y = xp.split(sol, 4)

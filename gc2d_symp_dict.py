@@ -4,15 +4,15 @@
 
 A = 0.7
 
-Ntraj = 500
+Ntraj = 50
 Tf = 500
-TimeStep = 1e-2  # recommended value: 5e-3
+TimeStep = 1e-1  # recommended value: 5e-3
 init = 'fixed'
 solve_method = 'symp'
-ode_solver = 'Verlet'
+ode_solver = 'BM6'
 omega = 10
 
-SaveData = False
+SaveData = True
 
 M = 25
 N = 2**12
