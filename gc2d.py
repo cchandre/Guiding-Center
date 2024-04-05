@@ -100,6 +100,7 @@ class GC2Dt:
 			if self.GCorder == 1:
 				stack = self.derivs(self.phi_gc1_1)
 				if self.check_energy:
+					self.dim += 1
 					stack = (*stack, self.pad(self.phi_gc1_1))
 			elif self.GCorder == 2:
 				if self.FLR[1] == 'all' and (self.rho != 0):

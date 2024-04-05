@@ -5,26 +5,26 @@
 import numpy as xp
 
 Potential = 'turbulent'
-Method = 'diffusion_gc'
+Method = 'poincare_gc'
 
 FLR = ('all', 'all')
 
 A = 0.7
-rho = xp.linspace(0, 0.3, 128)
-eta = xp.linspace(-0.2, 0.3, 128)
+rho = xp.array([0.1, 0.3])
+eta = 0
 
-Ntraj = 1024
-Tf = 5000
+Ntraj = 100
+Tf = 700
 threshold = 4
-TwoStepIntegration = True
+TwoStepIntegration = False
 Tmid = 1500
 TimeStep = 5e-2  # recommended values (gc: 5e-3, fo: 5e-4)
-check_energy = False
+check_energy = True
 init = 'fixed'
 
-SaveData = False
-PlotResults = False
-Parallelization = (True, 100)
+SaveData = True
+PlotResults = True
+Parallelization = (False, 1)
 
 modulo = False
 grid = False 
