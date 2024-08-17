@@ -57,13 +57,21 @@ ___
 
 ---
 Reference: 
-- M. Stanzani, F. Arlotti, G. Ciraolo, X. Garbet, C. Chandre, *Transition to super-diffusive transport in turbulent plasmas*, [arXiv:2309.02461](https://arxiv.org/abs/2309.02461)
+- M. Stanzani, F. Arlotti, G. Ciraolo, X. Garbet, C. Chandre, *Transition to super-diffusive transport in turbulent plasmas*, Physical Review E **110**, 025204 (2024) [arXiv:2309.02461](https://arxiv.org/abs/2309.02461)
 ```bibtex
-@unpublished{stanzani2023,
-  title = {Transition to super-diffusive transport in turbulent plasmas},
-  author = {Stanzani, M. and Arlotti, F. and Ciraolo, G. and Garbet, X. and Chandre, C.},
-  year = {2023},
-  URL = {https://arxiv.org/abs/2309.02461}
+@article{PhysRevE.110.025204,
+  title = {Transition to superdiffusive transport in turbulent plasmas},
+  author = {Stanzani, Matteo and Arlotti, Filippo and Ciraolo, Guido and Garbet, Xavier and Chandre, Cristel},
+  journal = {Phys. Rev. E},
+  volume = {110},
+  issue = {2},
+  pages = {025204},
+  numpages = {8},
+  year = {2024},
+  month = {Aug},
+  publisher = {American Physical Society},
+  doi = {10.1103/PhysRevE.110.025204},
+  url = {https://link.aps.org/doi/10.1103/PhysRevE.110.025204}
 }
 ```
 For more information: <cristel.chandre@cnrs.fr>
